@@ -17,10 +17,6 @@ postcss.config.mjs
 tailwind.config.ts
 tsconfig.json
 tsconfig.tsbuildinfo
-.firebaserc
-firebase.json
-firestore.indexes.json
-firestore.rules
 jest.config.js
 jest.setup.js
 .env.example
@@ -29,7 +25,5 @@ apphosting.production.yaml
 apphosting.staging.yaml
 apphosting.yaml
 components.json
-firebase-debug.log
-firestore-debug.log
 pglite-debug.log
 rules.md

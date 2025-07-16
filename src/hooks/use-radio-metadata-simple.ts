@@ -4,11 +4,7 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import { useDebounce } from '@/hooks/use-debounce';
 import type { Song } from '@/lib/types';
 import { API_ROUTES, UI } from '@/lib/constants';
-import {
-  requestDeduplication,
-  createBatchRequestKey,
-} from '@/lib/services/request-deduplication';
-import { songMetadataCache } from '@/lib/services/cache-service';
+// Removed unused imports: request-deduplication and cache-service
 
 // Raw type from the Azuracast API response for better type safety
 interface AzuracastSongHistoryItem {

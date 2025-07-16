@@ -35,24 +35,8 @@ export const defaultSong: Song = {
   playlists: [],
 };
 
-export interface PlaylistDocument {
-  name: string;
-  songCount: number;
-  lastPlayedAt: number; // Unix timestamp
-  plsUrl: string | null;
-  m3uUrl: string | null;
-  hidden?: boolean;
-}
-
-export interface Playlist {
-  id: string; // Document ID (slug)
-  name: string;
-  songCount: number;
-  lastPlayedAt: number; // Unix timestamp
-  plsUrl: string | null;
-  m3uUrl: string | null;
-  hidden?: boolean;
-}
+// Removed unused playlist types: PlaylistDocument, Playlist
+// These are not needed in the simplified version
 
 export interface SocialLinks {
   twitter?: string | null;
@@ -73,32 +57,7 @@ export interface UserInfo {
   socialLinks?: SocialLinks;
 }
 
-// Represents the structure of a document in the 'users' collection
-export interface UserDocument {
-  name: string | null;
-  avatar: string | null;
-  discordId?: string; // The user's unique Discord ID
-  updatedAt: string; // ISO 8601 timestamp
-  isGuildMember?: boolean; // Is the user in the official Discord server
-  isVip?: boolean; // Does the user have the VIP role in the Discord server
-  isModerator?: boolean; // Does the user have the Moderator role
-  firstLoginAt?: string; // ISO 8601 timestamp, set on first login
-  lastLoginAt?: string; // ISO 8601 timestamp, updated on every login
-  lastHeartbeatAt?: number; // Unix timestamp, for presence
-  totalListeningSeconds?: number; // Aggregate of active listening time
-  commentCount?: number;
-  reactionCount?: number;
-  socialLinks?: SocialLinks; // User's social media links
-}
-
-export interface Reaction {
-  id: string; // Document ID
-  songId: string;
-  emoji: string;
-  timestamp: number;
-  user: UserInfo;
-  createdAt?: number;
-}
+// Removed unused UserDocument type - not needed in simplified version
 
 export interface VisualizerConfig {
   sensitivity: number;
@@ -108,84 +67,8 @@ export interface VisualizerConfig {
   color: string;
 }
 
-export interface Comment {
-  id: string;
-  songId: string;
-  text: string;
-  timestamp: number;
-  user: UserInfo;
-  createdAt?: number;
-}
-
-export const defaultComment: Comment = {
-  id: '',
-  songId: '',
-  text: '',
-  timestamp: 0,
-  user: { id: '', name: null, avatar: null, isVip: false, isModerator: false },
-};
-
-export interface Report {
-  id: string;
-  songId: string;
-  userId: string;
-  reason: string;
-  createdAt: number;
-}
-
-export interface EnrichedReport {
-  id: string;
-  reason: string;
-  createdAt: number;
-  song: Song;
-  user: UserInfo;
-}
-
-export interface TopRatedSong extends Song {
-  interactionCount: number;
-}
-
-export interface Achievement {
-  id: string;
-  name: string;
-  description: string;
-  iconName: string;
-  type: 'user' | 'song';
-  category: 'reactions' | 'listening' | 'interactions' | 'age';
-  tier: number;
-  threshold: number;
-}
-
-export interface Tastemaker extends UserInfo {
-  interactionScore: number;
-  commentCount: number;
-  reactionCount: number;
-  totalListeningSeconds?: number;
-  achievements?: Achievement[];
-  socialLinks?: SocialLinks;
-}
-
-export interface EnrichedReaction extends Reaction {
-  song: Song;
-}
-
-export interface EnrichedComment extends Comment {
-  song: Song;
-}
-
-// Type for the response from the /api/listeners/active endpoint
-export interface ActiveListener extends UserInfo {
-  lastSeen: number;
-}
-
-export interface UserInteraction {
-  comments: Comment[];
-  reactions: Reaction[];
-}
-
-export interface AuthenticatedUser {
-  uid: string;
-}
+// Removed unused types: Reaction, Comment, Report, Achievement, Tastemaker, etc.
+// These are not needed in the simplified version
 
 export interface OnDemandLinks {
   song_suno?: string | null;
@@ -243,24 +126,8 @@ export interface AzuracastNowPlaying {
   is_online: boolean;
 }
 
-// For documents that haven't been hydrated with user info
-export interface CommentDoc {
-  id: string;
-  userId: string;
-  songId: string;
-  text: string;
-  timestamp: number;
-  createdAt: number; // Unix timestamp
-}
-
-export interface ReactionDoc {
-  id: string;
-  userId: string;
-  songId: string;
-  emoji: string;
-  timestamp: number;
-  createdAt: number; // Unix timestamp
-}
+// Removed unused document types: CommentDoc, ReactionDoc
+// These are not needed in the simplified version
 
 export interface NowPlaying {
   liveSong: ClientSong | null;
@@ -271,44 +138,139 @@ export interface NowPlaying {
 
 export interface StreamStatus {
   isOnline: boolean;
+  listenerCount?: number;
+  lastUpdate?: number;
 }
 
-export interface InteractionUpdate {
-  comments: Comment[];
-  reactions: Reaction[];
+// Enhanced error handling types
+export interface RadioError {
+  readonly code: string;
+  readonly message: string;
+  readonly context?: string;
+  readonly timestamp: number;
+  readonly recoverable: boolean;
 }
 
-export type Interaction =
-  | { type: 'now_playing'; data: NowPlaying }
-  | { type: 'stream_status'; data: StreamStatus }
-  | { type: 'interaction_update'; data: InteractionUpdate };
+// Connection health and metrics
+export type ConnectionHealth = 'healthy' | 'degraded' | 'unhealthy';
 
-export interface RadioState {
-  hasLock: boolean;
-  isStarted: boolean;
-  currentShId: number | null;
-  currentSongId: string | null;
-  lockRenewalTimer: NodeJS.Timeout | null;
-  azuracastEventSource: import('eventsource') | null;
-  pollingInterval: NodeJS.Timeout | null;
-  reconnectAttempts: number;
-  lastMetadata: NowPlaying | null;
-  lastInteractions: InteractionUpdate | null;
+export interface ConnectionMetrics {
+  readonly totalConnections: number;
+  readonly successfulConnections: number;
+  readonly failedConnections: number;
+  readonly lastConnectionTime: number;
+  readonly lastSuccessfulConnection: number;
+  readonly averageReconnectTime: number;
 }
 
-export interface StateService {
-  getState: () => RadioState;
-  setState: (newState: Partial<RadioState>) => void;
+export interface HealthStatus {
+  readonly status: ConnectionHealth;
+  readonly details: string;
+  readonly metrics: ConnectionMetrics;
+  readonly timestamp: number;
 }
 
-export interface LoggerService {
-  log: (message: string, ...args: unknown[]) => void;
-  logWarn: (message: string, ...args: unknown[]) => void;
-  logError: (message: string, ...args: unknown[]) => void;
+// Audio player state types
+export interface AudioPlayerState {
+  readonly isPlaying: boolean;
+  readonly volume: number;
+  readonly isMuted: boolean;
+  readonly streamUrl: string;
+  readonly isLoading: boolean;
+  readonly error: string | null;
 }
 
-export interface UserCache {
-  getUsers: (userIds: string[]) => Promise<Map<string, UserInfo>>;
-  getUser: (userId: string) => Promise<UserInfo | null>;
-  prime: (userIds: string[]) => Promise<void>;
+// Enhanced interaction stream event types
+export type InteractionEventType =
+  | 'now_playing'
+  | 'stream_status'
+  | 'connection_failed'
+  | 'connection_restored'
+  | 'health_check';
+
+export interface BaseInteractionEvent<T extends InteractionEventType, D = unknown> {
+  readonly type: T;
+  readonly data: D;
+  readonly timestamp?: number;
 }
+
+export type InteractionEvent =
+  | BaseInteractionEvent<'now_playing', {
+      liveSong: Song;
+      upNext: readonly Song[];
+      recentlyPlayed: readonly Song[];
+      listenerCount: number;
+    }>
+  | BaseInteractionEvent<'stream_status', {
+      isOnline: boolean;
+      listenerCount?: number;
+    }>
+  | BaseInteractionEvent<'connection_failed', {
+      reason: string;
+      metrics: ConnectionMetrics;
+    }>
+  | BaseInteractionEvent<'connection_restored', {
+      metrics: ConnectionMetrics;
+    }>
+  | BaseInteractionEvent<'health_check', HealthStatus>;
+
+// Platform detection types
+export interface PlatformInfo {
+  readonly isIOS: boolean;
+  readonly isAndroid: boolean;
+  readonly isSafari: boolean;
+  readonly isChrome: boolean;
+  readonly isMobile: boolean;
+  readonly userAgent: string;
+}
+
+// Type guards for runtime validation
+export const isSong = (obj: unknown): obj is Song => {
+  return (
+    typeof obj === 'object' &&
+    obj !== null &&
+    'id' in obj &&
+    'songId' in obj &&
+    'title' in obj &&
+    'artist' in obj &&
+    'duration' in obj &&
+    typeof (obj as Song).title === 'string' &&
+    typeof (obj as Song).artist === 'string' &&
+    typeof (obj as Song).duration === 'number'
+  );
+};
+
+export const isStreamStatus = (obj: unknown): obj is StreamStatus => {
+  return (
+    typeof obj === 'object' &&
+    obj !== null &&
+    'isOnline' in obj &&
+    typeof (obj as StreamStatus).isOnline === 'boolean'
+  );
+};
+
+export const isInteractionEvent = (obj: unknown): obj is InteractionEvent => {
+  return (
+    typeof obj === 'object' &&
+    obj !== null &&
+    'type' in obj &&
+    'data' in obj &&
+    typeof (obj as InteractionEvent).type === 'string'
+  );
+};
+
+// Constants for type validation
+export const SUPPORTED_AUDIO_FORMATS = ['mp3', 'm3u8', 'aac'] as const;
+export const SUPPORTED_PLATFORMS = ['spotify', 'youtube', 'soundcloud', 'bandcamp', 'suno'] as const;
+
+export type AudioFormat = typeof SUPPORTED_AUDIO_FORMATS[number];
+export type SupportedPlatform = typeof SUPPORTED_PLATFORMS[number];
+
+// Utility types for better type safety
+export type NonEmptyArray<T> = [T, ...T[]];
+export type Optional<T, K extends keyof T> = Omit<T, K> & Partial<Pick<T, K>>;
+export type RequiredFields<T, K extends keyof T> = T & Required<Pick<T, K>>;
+
+// Removed unused types for simplified version:
+// InteractionUpdate, Interaction, RadioState, StateService, LoggerService, UserCache
+// These are not needed in the client-only simplified version

@@ -283,7 +283,7 @@ if ! should_skip_step "cleanup" && [ "${CONTINUE_FROM:-system-check}" != "depend
     rm -f .env.local .env.development .env.test
     
     # Remove development logs
-    rm -f firebase-debug.log firestore-debug.log
+    rm -f *.log
     
     # Remove any backup files
     find . -name "*.bak" -type f -delete 2>/dev/null || true
@@ -332,11 +332,6 @@ NEXT_PUBLIC_RADIO_API_URL=https://radio.oadro.com/api
 
 # Application URLs
 NEXT_PUBLIC_APP_URL=https://your-domain.com
-
-# Firebase Configuration (if using Firebase)
-# NEXT_PUBLIC_FIREBASE_API_KEY=your-api-key
-# NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN=your-project.firebaseapp.com
-# NEXT_PUBLIC_FIREBASE_PROJECT_ID=your-project-id
 
 # Analytics (optional)
 # NEXT_PUBLIC_GA_MEASUREMENT_ID=G-XXXXXXXXXX

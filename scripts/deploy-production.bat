@@ -58,8 +58,7 @@ if exist ".env.development" del /f ".env.development"
 if exist ".env.test" del /f ".env.test"
 
 REM Remove logs
-if exist "firebase-debug.log" del /f "firebase-debug.log"
-if exist "firestore-debug.log" del /f "firestore-debug.log"
+if exist "*.log" del /f "*.log"
 
 REM Remove backup files
 for /r %%i in (*.bak) do del /f "%%i"
@@ -116,11 +115,6 @@ if not exist ".env.production" (
         echo.
         echo # Application URLs
         echo NEXT_PUBLIC_APP_URL=https://your-domain.com
-        echo.
-        echo # Firebase Configuration ^(if using Firebase^)
-        echo # NEXT_PUBLIC_FIREBASE_API_KEY=your-api-key
-        echo # NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN=your-project.firebaseapp.com
-        echo # NEXT_PUBLIC_FIREBASE_PROJECT_ID=your-project-id
         echo.
         echo # Analytics ^(optional^)
         echo # NEXT_PUBLIC_GA_MEASUREMENT_ID=G-XXXXXXXXXX

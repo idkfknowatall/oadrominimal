@@ -1,8 +1,7 @@
 'use client';
 
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
-import dynamic from 'next/dynamic';
-import { AnimatePresence } from 'framer-motion';
+// Removed unused imports: dynamic, AnimatePresence
 
 import RadioView from '@/components/views/radio-view-simple';
 import ErrorBoundary from '@/components/error-boundary';
@@ -161,11 +160,11 @@ export default function RadioClient({ children }: RadioClientProps) {
       toast,
       // No auth needed
       user: null,
-      isVip: false,
-      isModerator: false,
-      isGuildMember: false,
-      isLoggedIn: false,
-      isRefreshing: false,
+      isVip: false as const,
+      isModerator: false as const,
+      isGuildMember: false as const,
+      isLoggedIn: false as const,
+      isRefreshing: false as const,
     }),
     [
       radio.liveSong,

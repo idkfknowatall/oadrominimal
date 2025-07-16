@@ -1,16 +1,38 @@
 'use client';
 
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import Hls from 'hls.js';
 import { HLS_STREAM_URL, VISUALIZER_FFT_SIZE } from '@/lib/config';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { useMobileAudioOptimization } from '@/hooks/use-mobile-audio-optimization';
 
+// Audio player state interface for better type safety
+interface AudioPlayerState {
+  isPlaying: boolean;
+  streamUrl: string;
+  volume: number;
+  isMuted: boolean;
+  isLoading: boolean;
+  error: string | null;
+}
+
+// Audio connection state for better tracking
+interface AudioConnectionState {
+  isConnected: boolean;
+  connectionAttempts: number;
+  lastConnectionTime: number;
+}
+
 export function useAudioPlayer(forceSseReconnect?: () => void) {
-  const [isPlaying, setIsPlaying] = useState(false);
-  const [streamUrl, setStreamUrl] = useState(HLS_STREAM_URL);
-  const [volume, setVolume] = useState(1);
-  const [isMuted, setIsMuted] = useState(false);
+  // Consolidated state management
+  const [state, setState] = useState<AudioPlayerState>({
+    isPlaying: false,
+    streamUrl: HLS_STREAM_URL,
+    volume: 1,
+    isMuted: false,
+    isLoading: false,
+    error: null,
+  });
   
   // Mobile detection for optimizations
   const isMobile = useIsMobile();
@@ -24,8 +46,12 @@ export function useAudioPlayer(forceSseReconnect?: () => void) {
   const gainRef = useRef<GainNode | null>(null);
   const animationFrameRef = useRef<number | null>(null);
 
-  // Ref to track if we're currently connected to avoid redundant setups.
-  const isConnectedRef = useRef(false);
+  // Enhanced connection tracking
+  const connectionStateRef = useRef<AudioConnectionState>({
+    isConnected: false,
+    connectionAttempts: 0,
+    lastConnectionTime: 0,
+  });
 
   // Ref to track current play promise to avoid interruptions
   const playPromiseRef = useRef<Promise<void> | null>(null);
@@ -33,18 +59,55 @@ export function useAudioPlayer(forceSseReconnect?: () => void) {
   // Apply mobile audio optimizations
   useMobileAudioOptimization(audioRef, isMobile);
 
+  // Memoized HLS configuration for better performance
+  const hlsConfig = useMemo(() => ({
+    debug: false,
+    maxBufferLength: isMobile ? 15 : 30,
+    maxMaxBufferLength: isMobile ? 30 : 60,
+    maxBufferSize: isMobile ? 30 * 1000 * 1000 : 60 * 1000 * 1000,
+    maxBufferHole: 0.5,
+    lowLatencyMode: false,
+    backBufferLength: isMobile ? 30 : 90,
+    fragLoadingTimeOut: 20000,
+    manifestLoadingTimeOut: 10000,
+    enableWorker: !isMobile,
+    startLevel: -1,
+    capLevelToPlayerSize: true,
+    liveSyncDurationCount: isMobile ? 2 : 3,
+    liveMaxLatencyDurationCount: isMobile ? 5 : 10,
+    maxFragLookUpTolerance: 0.25,
+    maxSeekHole: 2,
+    manifestLoadingMaxRetry: 3,
+    manifestLoadingRetryDelay: 1000,
+    levelLoadingMaxRetry: 3,
+    levelLoadingRetryDelay: 1000,
+    fragLoadingMaxRetry: 3,
+    fragLoadingRetryDelay: 1000,
+  }), [isMobile]);
+
+  // Enhanced error handling
+  const handleError = useCallback((error: string, context?: string) => {
+    console.error(`[AudioPlayer] ${context || 'Error'}:`, error);
+    setState(prev => ({ ...prev, error, isLoading: false }));
+  }, []);
+
+  // Clear error state
+  const clearError = useCallback(() => {
+    setState(prev => ({ ...prev, error: null }));
+  }, []);
+
   // Load stream URL from localStorage on mount
   useEffect(() => {
     const savedStreamUrl = localStorage.getItem('oadro_stream_url');
     if (savedStreamUrl) {
-      setStreamUrl(savedStreamUrl);
+      setState(prev => ({ ...prev, streamUrl: savedStreamUrl }));
     }
   }, []); // Runs once on client mount
 
   // Save stream URL to localStorage on change
   useEffect(() => {
-    localStorage.setItem('oadro_stream_url', streamUrl);
-  }, [streamUrl]);
+    localStorage.setItem('oadro_stream_url', state.streamUrl);
+  }, [state.streamUrl]);
 
   const initializeAudioGraph = useCallback(() => {
     if (audioContextRef.current || !audioRef.current) return;
@@ -64,7 +127,7 @@ export function useAudioPlayer(forceSseReconnect?: () => void) {
       analyserRef.current = analyser;
 
       const gainNode = context.createGain();
-      gainNode.gain.value = isMuted ? 0 : volume;
+      gainNode.gain.value = state.isMuted ? 0 : state.volume;
       gainRef.current = gainNode;
 
       const source = context.createMediaElementSource(audioRef.current);
@@ -87,15 +150,15 @@ export function useAudioPlayer(forceSseReconnect?: () => void) {
       }
       
     } catch (e) {
-      console.error('Failed to initialize Web Audio API', e);
+      handleError('Failed to initialize Web Audio API', 'Audio Graph');
     }
-  }, [volume, isMuted]);
+  }, [state.volume, state.isMuted, handleError]);
 
   const disconnect = useCallback(() => {
     const audio = audioRef.current;
-    if (!audio || !isConnectedRef.current) return;
+    if (!audio || !connectionStateRef.current.isConnected) return;
 
-    isConnectedRef.current = false;
+    connectionStateRef.current.isConnected = false;
 
     if (hlsRef.current) {
       hlsRef.current.destroy();
@@ -105,30 +168,34 @@ export function useAudioPlayer(forceSseReconnect?: () => void) {
   }, []);
 
   const togglePlayPause = useCallback(() => {
+    clearError();
+    
     if (!audioContextRef.current) {
       initializeAudioGraph();
     }
     if (audioContextRef.current?.state === 'suspended') {
       audioContextRef.current.resume();
     }
-    setIsPlaying((prevIsPlaying) => {
-      const newIsPlaying = !prevIsPlaying;
+    
+    setState(prev => {
+      const newIsPlaying = !prev.isPlaying;
       if (!newIsPlaying) {
         // When pausing, disconnect the stream to prevent stale content
         disconnect();
       }
-      // Removed unnecessary SSE reconnection on play - SSE should stay connected
-      return newIsPlaying;
+      return { ...prev, isPlaying: newIsPlaying, isLoading: newIsPlaying };
     });
-  }, [initializeAudioGraph, disconnect]);
+  }, [initializeAudioGraph, disconnect, clearError]);
 
   const connect = useCallback(() => {
     const audio = audioRef.current;
-    if (!audio || isConnectedRef.current) {
+    if (!audio || connectionStateRef.current.isConnected) {
       return;
     }
 
-    isConnectedRef.current = true;
+    connectionStateRef.current.isConnected = true;
+    connectionStateRef.current.connectionAttempts++;
+    connectionStateRef.current.lastConnectionTime = Date.now();
 
     const onCanPlay = () => {
       // Cancel any existing play promise to prevent interruptions
@@ -145,18 +212,19 @@ export function useAudioPlayer(forceSseReconnect?: () => void) {
           if (playPromiseRef.current === playPromise) {
             playPromiseRef.current = null;
           }
+          setState(prev => ({ ...prev, isLoading: false }));
           // Force SSE reconnection after successful connection to ensure fresh metadata
           if (forceSseReconnect) {
             forceSseReconnect();
           }
         })
         .catch((error) => {
-          console.error('[AudioPlayer] Audio play failed:', error);
+          handleError('Audio play failed', 'Play Promise');
           // Clear the promise ref since it completed (with error)
           if (playPromiseRef.current === playPromise) {
             playPromiseRef.current = null;
           }
-          setIsPlaying(false);
+          setState(prev => ({ ...prev, isPlaying: false, isLoading: false }));
         });
     };
 
@@ -183,43 +251,15 @@ export function useAudioPlayer(forceSseReconnect?: () => void) {
       audio.load();
       audio.addEventListener('canplay', onCanPlay, { once: true });
       audio.addEventListener('error', () => {
-        console.error('[AudioPlayer] MP3 fallback also failed');
-        setIsPlaying(false);
+        handleError('MP3 fallback also failed', 'MP3 Fallback');
+        setState(prev => ({ ...prev, isPlaying: false, isLoading: false }));
       }, { once: true });
     };
 
     // Try HLS first, fallback to MP3 if it fails
-    if (streamUrl.endsWith('.m3u8')) {
+    if (state.streamUrl.endsWith('.m3u8')) {
       if (Hls.isSupported()) {
-        const hls = new Hls({
-          debug: false,
-          // Mobile-optimized HLS settings to reduce crackling
-          maxBufferLength: isMobile ? 15 : 30, // Smaller buffer on mobile
-          maxMaxBufferLength: isMobile ? 30 : 60, // Maximum buffer length
-          maxBufferSize: isMobile ? 30 * 1000 * 1000 : 60 * 1000 * 1000, // Smaller buffer size on mobile
-          maxBufferHole: 0.5, // Allow small gaps in buffer
-          lowLatencyMode: false, // Disable low latency for stability
-          backBufferLength: isMobile ? 30 : 90, // Smaller back buffer on mobile
-          // Fragment loading optimizations
-          fragLoadingTimeOut: 20000, // 20 second timeout
-          manifestLoadingTimeOut: 10000, // 10 second timeout
-          // Mobile-specific optimizations
-          enableWorker: !isMobile, // Disable worker on mobile for stability
-          startLevel: -1, // Auto-select quality
-          capLevelToPlayerSize: true, // Match quality to player size
-          // Additional mobile optimizations
-          liveSyncDurationCount: isMobile ? 2 : 3, // Reduce sync duration on mobile
-          liveMaxLatencyDurationCount: isMobile ? 5 : 10, // Reduce max latency on mobile
-          maxFragLookUpTolerance: 0.25, // Tolerance for fragment lookup
-          maxSeekHole: 2, // Maximum seek hole
-          // Network optimizations for mobile
-          manifestLoadingMaxRetry: 3,
-          manifestLoadingRetryDelay: 1000,
-          levelLoadingMaxRetry: 3,
-          levelLoadingRetryDelay: 1000,
-          fragLoadingMaxRetry: 3,
-          fragLoadingRetryDelay: 1000,
-        });
+        const hls = new Hls(hlsConfig);
         hlsRef.current = hls;
 
         hls.on(Hls.Events.ERROR, (event, data) => {
@@ -230,9 +270,7 @@ export function useAudioPlayer(forceSseReconnect?: () => void) {
             data
           );
           if (data.fatal) {
-            console.error(
-              '[AudioPlayer] Fatal HLS error - falling back to MP3'
-            );
+            handleError('Fatal HLS error - falling back to MP3', 'HLS Fatal');
             // Destroy HLS instance and fallback to MP3
             hls.destroy();
             hlsRef.current = null;
@@ -240,7 +278,7 @@ export function useAudioPlayer(forceSseReconnect?: () => void) {
           }
         });
 
-        hls.loadSource(streamUrl);
+        hls.loadSource(state.streamUrl);
         hls.attachMedia(audio);
         hls.once(Hls.Events.MANIFEST_PARSED, () => {
           onCanPlay();
@@ -257,7 +295,7 @@ export function useAudioPlayer(forceSseReconnect?: () => void) {
         }, 10000); // 10 second timeout
 
       } else if (audio.canPlayType('application/vnd.apple.mpegurl')) {
-        audio.src = streamUrl;
+        audio.src = state.streamUrl;
         audio.addEventListener('canplay', onCanPlay, { once: true });
         audio.addEventListener('error', fallbackToMp3, { once: true });
       } else {
@@ -266,7 +304,7 @@ export function useAudioPlayer(forceSseReconnect?: () => void) {
       }
     } else {
       // Direct MP3 stream with mobile optimizations
-      audio.src = `${streamUrl}?_=${Date.now()}`;
+      audio.src = `${state.streamUrl}?_=${Date.now()}`;
       
       // Apply mobile-specific optimizations for direct MP3 streams
       if (isMobile) {
@@ -284,19 +322,19 @@ export function useAudioPlayer(forceSseReconnect?: () => void) {
       audio.load();
       audio.addEventListener('canplay', onCanPlay, { once: true });
       audio.addEventListener('error', () => {
-        console.error('[AudioPlayer] MP3 stream failed');
-        setIsPlaying(false);
+        handleError('MP3 stream failed', 'MP3 Stream');
+        setState(prev => ({ ...prev, isPlaying: false, isLoading: false }));
       }, { once: true });
     }
-  }, [streamUrl, forceSseReconnect, isPlaying, disconnect]);
+  }, [state.streamUrl, forceSseReconnect, state.isPlaying, disconnect, hlsConfig, handleError, isMobile]);
 
   // Effect to manage connection based on playback state.
   useEffect(() => {
     const audio = audioRef.current;
     if (!audio) return;
 
-    if (isPlaying) {
-      if (!isConnectedRef.current) {
+    if (state.isPlaying) {
+      if (!connectionStateRef.current.isConnected) {
         connect();
       } else {
         // Cancel any existing play promise to prevent interruptions
@@ -313,9 +351,10 @@ export function useAudioPlayer(forceSseReconnect?: () => void) {
             if (playPromiseRef.current === playPromise) {
               playPromiseRef.current = null;
             }
+            setState(prev => ({ ...prev, isLoading: false }));
           })
           .catch((error) => {
-            console.error('[AudioPlayer] Audio resume failed:', error);
+            handleError('Audio resume failed', 'Resume');
             // Clear the promise ref since it completed (with error)
             if (playPromiseRef.current === playPromise) {
               playPromiseRef.current = null;
@@ -326,31 +365,31 @@ export function useAudioPlayer(forceSseReconnect?: () => void) {
       // Just pause the audio - disconnection is now handled in togglePlayPause
       audio.pause();
     }
-  }, [isPlaying, connect]);
+  }, [state.isPlaying, connect, handleError]);
 
   // Effect to handle cleanup only when the stream URL changes or the component unmounts.
   useEffect(() => {
     return () => {
       disconnect();
     };
-  }, [streamUrl, disconnect]);
+  }, [state.streamUrl, disconnect]);
 
   // Effect to manage volume
   useEffect(() => {
     if (gainRef.current && audioContextRef.current) {
-      const targetVolume = isMuted ? 0 : volume;
+      const targetVolume = state.isMuted ? 0 : state.volume;
       gainRef.current.gain.setTargetAtTime(
         targetVolume,
         audioContextRef.current.currentTime,
         0.015
       );
     }
-  }, [volume, isMuted]);
+  }, [state.volume, state.isMuted]);
 
   // Effect for visualizer animation dispatch
   useEffect(() => {
     const visualize = () => {
-      if (!analyserRef.current || !isPlaying) {
+      if (!analyserRef.current || !state.isPlaying) {
         return;
       }
 
@@ -366,7 +405,7 @@ export function useAudioPlayer(forceSseReconnect?: () => void) {
       animationFrameRef.current = requestAnimationFrame(visualize);
     };
 
-    if (isPlaying) {
+    if (state.isPlaying) {
       if (!animationFrameRef.current) {
         visualize();
       }
@@ -384,18 +423,34 @@ export function useAudioPlayer(forceSseReconnect?: () => void) {
         })
       );
     };
-  }, [isPlaying]);
+  }, [state.isPlaying]);
+
+  // Memoized setter functions for better performance
+  const setVolume = useCallback((volume: number) => {
+    setState(prev => ({ ...prev, volume }));
+  }, []);
+
+  const setIsMuted = useCallback((isMuted: boolean) => {
+    setState(prev => ({ ...prev, isMuted }));
+  }, []);
+
+  const setStreamUrl = useCallback((streamUrl: string) => {
+    setState(prev => ({ ...prev, streamUrl }));
+  }, []);
 
   return {
     audioRef,
     analyserRef,
-    isPlaying,
-    volume,
-    isMuted,
-    streamUrl,
+    isPlaying: state.isPlaying,
+    volume: state.volume,
+    isMuted: state.isMuted,
+    streamUrl: state.streamUrl,
+    isLoading: state.isLoading,
+    error: state.error,
     togglePlayPause,
     setVolume,
     setIsMuted,
     setStreamUrl,
+    clearError,
   };
 }
