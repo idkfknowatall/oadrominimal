@@ -5,12 +5,12 @@ import Link from 'next/link';
 
 export default function AboutPage() {
   return (
-    <div className="min-h-screen bg-background text-foreground overflow-y-auto">
+    <div className="h-screen bg-background text-foreground flex flex-col">
       {/* Header */}
-      <div className="border-b border-border/40 p-4">
+      <div className="border-b border-border/40 p-4 flex-shrink-0">
         <div className="max-w-4xl mx-auto flex items-center gap-4">
-          <Link 
-            href="/" 
+          <Link
+            href="/"
             className="flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors"
           >
             <ArrowLeft className="w-5 h-5" />
@@ -21,8 +21,9 @@ export default function AboutPage() {
         </div>
       </div>
 
-      {/* Main Content */}
-      <div className="max-w-4xl mx-auto p-6 space-y-12 pb-20">
+      {/* Main Content - Scrollable */}
+      <div className="flex-1 overflow-y-auto">
+        <div className="max-w-4xl mx-auto p-6 space-y-12 pb-20">
         {/* Community Section */}
         <section className="space-y-6">
           <div className="flex items-center gap-3">
@@ -239,6 +240,7 @@ export default function AboutPage() {
             </Link>
           </div>
         </section>
+        </div>
       </div>
     </div>
   );
