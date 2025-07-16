@@ -1,0 +1,80 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 222 14% 20%;
+    --background-end: 240 10% 5%;
+    --foreground: 0 0% 98%;
+    --card: 222 14% 16%;
+    --card-foreground: 0 0% 98%;
+    --popover: 222 14% 16%;
+    --popover-foreground: 0 0% 98%;
+    --primary: 283 100% 64%;
+    --primary-foreground: 222 14% 16%;
+    --secondary: 0 0% 14.9%;
+    --secondary-foreground: 0 0% 98%;
+    --muted: 0 0% 14.9%;
+    --muted-foreground: 0 0% 63.9%;
+    --accent: 262 88% 66%;
+    --accent-foreground: 222 14% 16%;
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 0 0% 25%;
+    --input: 0 0% 25%;
+    --ring: 283 100% 64%;
+    --radius: 0.5rem;
+    --reaction-1: 38 92% 50%;
+    --reaction-2: 262 88% 66%;
+    --reaction-3: 350 100% 88%;
+    --reaction-4: 195 91% 55%;
+    --reaction-5: 217 91% 60%;
+    --vip: 45 90% 55%;
+    --moderator: 180 70% 45%;
+  }
+
+  .dark {
+    --background: 222 14% 20%;
+    --background-end: 240 10% 5%;
+    --foreground: 0 0% 98%;
+    --card: 222 14% 16%;
+    --card-foreground: 0 0% 98%;
+    --popover: 222 14% 16%;
+    --popover-foreground: 0 0% 98%;
+    --primary: 283 100% 64%;
+    --primary-foreground: 222 14% 16%;
+    --secondary: 0 0% 14.9%;
+    --secondary-foreground: 0 0% 98%;
+    --muted: 0 0% 14.9%;
+    --muted-foreground: 0 0% 63.9%;
+    --accent: 262 88% 66%;
+    --accent-foreground: 222 14% 16%;
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 0 0% 25%;
+    --input: 0 0% 25%;
+    --ring: 283 100% 64%;
+    --reaction-1: 38 92% 50%;
+    --reaction-2: 262 88% 66%;
+    --reaction-3: 350 100% 88%;
+    --reaction-4: 195 91% 55%;
+    --reaction-5: 217 91% 60%;
+    --vip: 45 90% 55%;
+    --moderator: 180 70% 45%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground overflow-hidden;
+    background: linear-gradient(
+      180deg,
+      hsl(var(--background)) 0%,
+      hsl(var(--background-end)) 100%
+    );
+  }
+}
