@@ -9,7 +9,6 @@ import RadioView from '@/components/views/radio-view-simple';
 import ErrorBoundary from '@/components/error-boundary';
 import AsyncBoundary from '@/components/async-boundary';
 import PlayerErrorBoundary from '@/components/player-error-boundary';
-import ListenerCount from '@/components/listener-count';
 
 import { useRadioMetadata } from '@/hooks/use-radio-metadata-simple';
 import { useAudioPlayer } from '@/hooks/use-audio-player';
@@ -191,8 +190,6 @@ export default function RadioClient({ children }: RadioClientProps) {
 
   return (
     <RadioProvider value={contextValue}>
-      <ListenerCount />
-      
       {/* Audio player with error boundary */}
       <PlayerErrorBoundary
         onRetry={() => {
