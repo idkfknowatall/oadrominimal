@@ -2,6 +2,8 @@
 
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 // Removed unused imports: dynamic, AnimatePresence
+import Link from 'next/link';
+import { Info } from 'lucide-react';
 
 import RadioView from '@/components/views/radio-view-simple';
 import ErrorBoundary from '@/components/error-boundary';
@@ -211,9 +213,16 @@ export default function RadioClient({ children }: RadioClientProps) {
       {/* Visualizer components removed for simplified version */}
 
       <div className="flex flex-col text-foreground h-svh overflow-hidden selection:bg-primary/40 selection:text-foreground">
-        {/* Simple header */}
-        <div className="flex items-center justify-center p-4 border-b border-border/40">
+        {/* Header with navigation */}
+        <div className="flex items-center justify-between p-4 border-b border-border/40">
           <h1 className="text-2xl font-bold">OADRO Radio</h1>
+          <Link
+            href="/about"
+            className="flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors px-3 py-2 rounded-lg hover:bg-accent"
+          >
+            <Info className="w-4 h-4" />
+            <span className="hidden sm:inline">About</span>
+          </Link>
         </div>
 
         {/* Main radio view */}
