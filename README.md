@@ -1,65 +1,117 @@
-# 🎵 OADRO AI Radio - A Firebase Studio Project
+# 🎵 OADRO AI Radio - Minimal Version
 
-A modern, AI-powered web application for a community-driven radio experience. Built with Next.js, Firebase, and Tailwind CSS, this platform provides a live, interactive radio stream where listener interactions shape the playlist.
+A modern, streamlined web application for radio streaming. Built with Next.js and Tailwind CSS, this platform provides a clean, live radio streaming experience with a focus on simplicity and performance.
 
 ## 🌟 Features
 
-### ✨ **For Listeners**
+### ✨ **Core Features**
 
-- **Live Radio Stream**: High-quality HLS audio streaming that's always on, with a dynamic, music-reactive background visualizer.
-- **Real-time Reactions & Comments**: Interact with the currently playing song using timestamped emoji reactions. VIPs can post animated "Super Comments" that appear for everyone.
-- **Community-Driven Curation**: Your interactions directly influence the AI DJ's future song selections.
-- **Discord-Powered Login**: Seamless and secure authentication using your Discord account.
+- **Live Radio Stream**: High-quality HLS audio streaming with a clean, modern interface.
+- **Dynamic Background**: Music-reactive background visualizer that responds to the audio.
 - **Cross-Platform Experience**: Fully responsive design for desktop and mobile, with background playback support via the Media Session API.
-- **Unified Profile & Activity**: View your stats, achievements, and a complete history of your interactions in a unified profile view.
+- **Real-time Metadata**: Live display of currently playing song information.
+- **Audio Controls**: Standard playback controls with volume adjustment and timeline scrubbing.
 
-### 👥 **For Community & Moderators**
+### 🎧 **User Experience**
 
-- **Community Leaderboards**: See who the top "Tastemakers" are based on their influence score, and browse the "Top Rated" songs ranked by community interactions.
-- **Full Music Library**: Search the entire history of played songs by artist or title.
-- **Achievements & Badges**: Earn badges for listening milestones and interaction counts, adding a fun, gamified layer to the experience.
-- **Moderation Tools**: Users can report songs for issues like low quality or incorrect metadata. Moderators have a dedicated view to review these reports.
+- **Minimal Interface**: Clean, distraction-free design focused on the music.
+- **Performance Optimized**: Fast loading and smooth playback with efficient resource usage.
+- **Mobile Friendly**: Touch-optimized controls and responsive layout for all devices.
+- **Accessibility**: Keyboard navigation and screen reader support.
 
 ### 🔧 **Technical Features**
 
 - **Modern Tech Stack**: Built with Next.js 14 (App Router), TypeScript, and Tailwind CSS.
-- **Scalable Real-time Backend**: Uses a server-side listener and Server-Sent Events (SSE) to push live data to all clients efficiently, avoiding client-side polling.
-- **Serverless Architecture**: Deployed on Firebase App Hosting with a Firestore database for all persistent data.
-- **Secure by Design**: Robust Firestore Security Rules and server-side validation for all actions, including rate-limiting and XSS prevention.
-- **Secure Secrets Management**: All credentials managed via Google Secret Manager, with zero secrets in the repository.
+- **Lightweight Architecture**: Simplified codebase without external database dependencies.
+- **Server-Sent Events**: Real-time updates for song metadata and streaming status.
+- **Production Ready**: Includes PM2 configuration for reliable deployment and process management.
+- **Security Focused**: Rate limiting, CORS protection, and secure headers via middleware.
 
 ## 🏗️ Architecture
 
-This application is built on a modern, serverless Jamstack architecture.
+This application is built with a simplified, modern architecture focused on performance and maintainability.
 
 - **Frontend**: The user interface is a **Next.js 14** application using the **App Router**. It leverages **React Server Components** for performance and **Client Components** for interactivity. State is managed with React Context.
-- **Backend API**: The backend is composed of **Next.js Route Handlers**, which provide secure, serverless API endpoints for all data operations.
-- **Database**: **Cloud Firestore** acts as the primary database, storing all persistent data in a NoSQL structure.
-- **Authentication**: **Firebase Authentication** handles user sign-in, using a custom **Discord OIDC provider**.
-- **Hosting & Deployment**: The entire application is deployed and hosted on **Firebase App Hosting**, which integrates seamlessly with Google Secret Manager for secure credential handling.
+- **Backend API**: The backend is composed of **Next.js Route Handlers**, which provide API endpoints for streaming metadata and system status.
+- **Audio Streaming**: Direct HLS audio stream integration with real-time metadata updates via Server-Sent Events.
+- **Deployment**: Production deployment using **PM2** process manager for reliability and automatic restarts.
+- **Security**: Middleware-based security with rate limiting, CORS protection, and secure headers.
 
-## 💾 Database Schema
+## 🎵 Audio Streaming
 
-The data is stored in Cloud Firestore across several main collections. For full details, see `docs/schemas.md`.
+The application provides a streamlined audio experience without persistent data storage.
 
-- **`users`**: Stores public user profiles (name, avatar, Discord ID) and server-managed authorization flags (`isVip`, `isModerator`). Also stores denormalized interaction counts.
-- **`songs`**: Stores metadata for every song that has been interacted with, including play counts and interaction counts.
-- **`reactions`**: Contains one document for every emoji reaction from a user on a song.
-- **`comments`**: Contains one document for every comment from a user on a song.
-- **`reports`**: Contains documents for each song report submitted by a user for moderator review.
+- **Live Stream**: Direct HLS audio stream with real-time metadata
+- **Song Information**: Dynamic display of currently playing track information
+- **Playback Controls**: Standard audio controls with volume and timeline management
+- **Background Visualization**: Audio-reactive visual effects synchronized with the stream
 
 ## 📡 API Endpoints
 
-All backend logic is handled by Next.js Route Handlers in `src/app/api/`. See `docs/schemas.md` for a full list.
+Simplified API structure focused on streaming functionality:
+
+- **`/api/radio-stream`**: Server-Sent Events endpoint for real-time radio metadata
+- **`/api/song/[songId]`**: Individual song information (returns unavailable message)
+- **`/api/interaction-stream`**: Event stream for system status updates
+
+## 🚀 Getting Started
+
+### Prerequisites
+
+- Node.js 18+ and npm
+- PM2 (for production deployment)
+
+### Installation
+
+1. **Clone the repository**:
+   ```bash
+   git clone https://github.com/idkfknowatall/oadrominimal.git
+   cd oadrominimal
+   ```
+
+2. **Install dependencies**:
+   ```bash
+   npm install
+   ```
+
+3. **Set up environment variables** (optional):
+   Create a `.env.local` file for any custom configuration:
+   ```env
+   # Application Configuration
+   PORT=3000
+   NODE_ENV=production
+   ```
+
+4. **Run the development server**:
+   ```bash
+   npm run dev
+   ```
+
+5. **Open your browser** and navigate to `http://localhost:3000`
+
+### Production Deployment
+
+1. **Build the application**:
+   ```bash
+   npm run build
+   ```
+
+2. **Start with PM2**:
+   ```bash
+   pm2 start ecosystem.config.js
+   ```
+
+3. **Monitor the application**:
+   ```bash
+   pm2 status
+   pm2 logs oadro-radio
+   ```
 
 ## 📄 Project Documentation
 
-This project is documented to help developers and architects understand its structure, conventions, and features. The main entry point for all documentation is the **[Documentation Hub](./docs/README.md)**.
+For more detailed information about the project, see the following documentation:
 
-Key documents include:
-
-- **[Application Features](./docs/app-features.md)**: A comprehensive breakdown of every feature in the application.
-- **[Data Schemas](./docs/schemas.md)**: Describes the Firestore database schema.
-- **[API Specification](./docs/openapi.yml)**: A formal OpenAPI 3.0 specification for the application's API.
-- **[Development Styleguide](./docs/dev-styleguide.md)**: The official style guide for the project.
-- **[Changelog](./docs/changelog.md)**: A running log of all features and bug fixes implemented.
+- **[Component Architecture](docs/components.md)**: Overview of the React component structure and patterns.
+- **[Audio Integration](docs/audio.md)**: Documentation of the HLS streaming implementation and metadata handling.
+- **[Deployment Guide](docs/deployment.md)**: Step-by-step instructions for deploying with PM2 and process management.
+- **[Development Setup](docs/development.md)**: Local development environment setup and configuration.
