@@ -83,3 +83,9 @@ src_backup_*/
 
 # Archive files
 *.zip
+
+# Database files
+*.db
+*.db-journal
+prisma/dev.db*
+prisma/migrations/

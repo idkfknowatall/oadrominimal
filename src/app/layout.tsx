@@ -2,11 +2,11 @@ import type { Metadata, Viewport } from 'next';
 import './globals.css';
 import '@/lib/radio-simple'; // This will initialize and start the simplified radio worker
 import { Toaster } from '@/components/ui/toaster';
-import { ThemeProvider } from '@/components/theme-provider';
 import { inter, spaceGrotesk } from './fonts';
 import { cn } from '@/lib/utils';
 import ErrorBoundary from '@/components/error-boundary';
 import AsyncBoundary from '@/components/async-boundary';
+import { Providers } from '@/components/providers';
 
 export const metadata: Metadata = {
   applicationName: 'OADRO Radio',
@@ -56,15 +56,10 @@ export default function RootLayout({
             showNetworkStatus={true}
             maxRetries={2}
           >
-            <ThemeProvider
-              attribute="class"
-              defaultTheme="dark"
-              enableSystem
-              disableTransitionOnChange
-            >
+            <Providers>
               {children}
               <Toaster />
-            </ThemeProvider>
+            </Providers>
           </AsyncBoundary>
         </ErrorBoundary>
       </body>

@@ -9,6 +9,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Slider } from '@/components/ui/slider';
 import { useRadio } from '@/contexts/radio-context-simple';
 import PlayerTimeline from './player-timeline-simple';
+import { VotingButtons } from '@/components/voting/voting-buttons';
 
 export default function AudioPlayer() {
   const {
@@ -94,6 +95,13 @@ export default function AudioPlayer() {
         {/* Timeline */}
         <div className="mb-6">
           <PlayerTimeline />
+        </div>
+
+        {/* Voting Buttons */}
+        <div className="mb-6">
+          <VotingButtons
+            songId={String(liveSong.id || `${liveSong.title}-${liveSong.artist}`)}
+          />
         </div>
 
         {/* Controls */}
