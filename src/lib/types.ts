@@ -226,17 +226,21 @@ export interface PlatformInfo {
 
 // Type guards for runtime validation
 export const isSong = (obj: unknown): obj is Song => {
+  if (typeof obj !== 'object' || obj === null) return false;
+  
+  const song = obj as Record<string, unknown>;
+  
   return (
-    typeof obj === 'object' &&
-    obj !== null &&
-    'id' in obj &&
-    'songId' in obj &&
-    'title' in obj &&
-    'artist' in obj &&
-    'duration' in obj &&
-    typeof (obj as Song).title === 'string' &&
-    typeof (obj as Song).artist === 'string' &&
-    typeof (obj as Song).duration === 'number'
+    typeof song.id === 'number' &&
+    typeof song.songId === 'string' &&
+    typeof song.title === 'string' &&
+    typeof song.artist === 'string' &&
+    typeof song.duration === 'number' &&
+    typeof song.albumArt === 'string' &&
+    typeof song.genre === 'string' &&
+    song.title.length > 0 &&
+    song.artist.length > 0 &&
+    song.duration >= 0
   );
 };
 

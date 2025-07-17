@@ -5,12 +5,12 @@
 
 import type { VisualizerConfig } from './types';
 
+import { NEXT_PUBLIC_AZURACAST_BASE_URL, NEXT_PUBLIC_AZURACAST_STATION_NAME } from './env';
+
 // --- AzuraCast Connection ---
-// Base URL and station name are the source of truth for all AzuraCast URLs.
-export const AZURACAST_BASE_URL =
-  process.env.NEXT_PUBLIC_AZURACAST_BASE_URL || 'https://radio.oadro.com';
-export const AZURACAST_STATION_NAME =
-  process.env.NEXT_PUBLIC_AZURACAST_STATION_NAME || 'oadro';
+// Base URL and station name are validated from environment variables
+export const AZURACAST_BASE_URL = NEXT_PUBLIC_AZURACAST_BASE_URL;
+export const AZURACAST_STATION_NAME = NEXT_PUBLIC_AZURACAST_STATION_NAME;
 
 // --- Radio Stream URLs ---
 // These are now derived from the base configuration for consistency.

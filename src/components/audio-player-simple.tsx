@@ -103,26 +103,30 @@ export default function AudioPlayer() {
             <Button
               onClick={togglePlayPause}
               size="lg"
-              className="w-16 h-16 rounded-full bg-primary hover:bg-primary/90 text-primary-foreground shadow-lg hover:shadow-xl transition-all duration-200"
+              className="w-16 h-16 rounded-full bg-primary hover:bg-primary/90 text-primary-foreground shadow-lg hover:shadow-xl transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2"
+              aria-label={isPlaying ? `Pause ${liveSong.title} by ${liveSong.artist}` : `Play ${liveSong.title} by ${liveSong.artist}`}
+              aria-pressed={isPlaying}
             >
               {isPlaying ? (
-                <Pause className="w-6 h-6" />
+                <Pause className="w-6 h-6" aria-hidden="true" />
               ) : (
-                <Play className="w-6 h-6 ml-0.5" />
+                <Play className="w-6 h-6 ml-0.5" aria-hidden="true" />
               )}
             </Button>
           </div>
         </div>
 
         {/* Volume Control */}
-        <div className="flex items-center gap-3 mb-4">
+        <div className="flex items-center gap-3 mb-4" role="group" aria-label="Volume controls">
           <Button
             variant="ghost"
             size="sm"
             onClick={() => setIsMuted(!isMuted)}
-            className="p-2"
+            className="p-2 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2"
+            aria-label={isMuted ? 'Unmute audio' : 'Mute audio'}
+            aria-pressed={isMuted}
           >
-            <VolumeIcon className="w-4 h-4" />
+            <VolumeIcon className="w-4 h-4" aria-hidden="true" />
           </Button>
           <Slider
             value={[isMuted ? 0 : volume]}
@@ -135,8 +139,17 @@ export default function AudioPlayer() {
             max={1}
             step={0.01}
             className="flex-1"
+            aria-label="Volume level"
+            aria-valuemin={0}
+            aria-valuemax={100}
+            aria-valuenow={Math.round((isMuted ? 0 : volume) * 100)}
+            aria-valuetext={`Volume ${Math.round((isMuted ? 0 : volume) * 100)} percent`}
           />
-          <span className="text-xs text-muted-foreground w-8 text-right">
+          <span
+            className="text-xs text-muted-foreground w-8 text-right"
+            aria-live="polite"
+            aria-label="Current volume percentage"
+          >
             {Math.round((isMuted ? 0 : volume) * 100)}%
           </span>
         </div>

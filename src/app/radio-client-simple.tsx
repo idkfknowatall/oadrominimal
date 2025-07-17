@@ -14,6 +14,8 @@ import { useRadioMetadata } from '@/hooks/use-radio-metadata-simple';
 import { useAudioPlayer } from '@/hooks/use-audio-player';
 import { useMediaSession } from '@/hooks/use-media-session';
 import { RadioProvider } from '@/contexts/radio-context-simple';
+import { AudioProvider } from '@/contexts/audio-context';
+import { MetadataProvider } from '@/contexts/metadata-context';
 import { useToast } from '@/hooks/use-toast';
 import { TIME } from '@/lib/constants';
 // Development banner removed
@@ -46,9 +48,39 @@ export default function RadioClient({ children }: RadioClientProps) {
   const { toast } = useToast();
 
   // --- EFFECTS ---
-  // Visualizer config removed for simplified version
+  // Keyboard navigation support
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      // Only handle keyboard shortcuts when not typing in an input
+      if (event.target instanceof HTMLInputElement || event.target instanceof HTMLTextAreaElement) {
+        return;
+      }
 
-  // Hotkeys removed for simplified version
+      switch (event.code) {
+        case 'Space':
+          event.preventDefault();
+          audioPlayer.togglePlayPause();
+          break;
+        case 'ArrowUp':
+          event.preventDefault();
+          audioPlayer.setVolume(Math.min(1, audioPlayer.volume + 0.1));
+          break;
+        case 'ArrowDown':
+          event.preventDefault();
+          audioPlayer.setVolume(Math.max(0, audioPlayer.volume - 0.1));
+          break;
+        case 'KeyM':
+          event.preventDefault();
+          audioPlayer.setIsMuted(!audioPlayer.isMuted);
+          break;
+      }
+    };
+
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, [audioPlayer]);
+
+  // Visualizer config removed for simplified version
 
   // Store previous song ID to properly detect song changes
   const previousSongIdRef = useRef<string | number | null>(null);
@@ -118,7 +150,11 @@ export default function RadioClient({ children }: RadioClientProps) {
         const rmsValue = isSilence
           ? 0.01
           : Math.max(0.01, Math.sqrt(sum / dataLength));
-        setHistoricalWaveform((prev) => [...prev, rmsValue]);
+        setHistoricalWaveform((prev) => {
+          const newWaveform = [...prev, rmsValue];
+          // Keep only last 300 seconds (5 minutes) of waveform data to prevent memory leaks
+          return newWaveform.length > 300 ? newWaveform.slice(-300) : newWaveform;
+        });
       } else {
         setHistoricalWaveform((prev) => [...prev, 0.01]);
       }
@@ -136,7 +172,54 @@ export default function RadioClient({ children }: RadioClientProps) {
     audioPlayer.analyserRef,
   ]);
 
-  // Context value with only radio functionality
+  // Split context values for better performance
+  const audioContextValue = useMemo(
+    () => ({
+      isPlaying: audioPlayer.isPlaying,
+      volume: audioPlayer.volume,
+      isMuted: audioPlayer.isMuted,
+      streamUrl: audioPlayer.streamUrl,
+      setVolume: audioPlayer.setVolume,
+      setIsMuted: audioPlayer.setIsMuted,
+      setStreamUrl: audioPlayer.setStreamUrl,
+      togglePlayPause: audioPlayer.togglePlayPause,
+      audioRef: audioPlayer.audioRef,
+      analyserRef: audioPlayer.analyserRef,
+      progress,
+      historicalWaveform,
+    }),
+    [
+      audioPlayer.isPlaying,
+      audioPlayer.volume,
+      audioPlayer.isMuted,
+      audioPlayer.streamUrl,
+      audioPlayer.setVolume,
+      audioPlayer.setIsMuted,
+      audioPlayer.setStreamUrl,
+      audioPlayer.togglePlayPause,
+      audioPlayer.audioRef,
+      audioPlayer.analyserRef,
+      progress,
+      historicalWaveform,
+    ]
+  );
+
+  const metadataContextValue = useMemo(
+    () => ({
+      liveSong: radio.liveSong,
+      recentlyPlayed: radio.recentlyPlayed,
+      upNext: radio.upNext,
+      listenerCount: radio.listenerCount,
+    }),
+    [
+      radio.liveSong,
+      radio.recentlyPlayed,
+      radio.upNext,
+      radio.listenerCount,
+    ]
+  );
+
+  // Legacy context value for backward compatibility
   const contextValue = useMemo(
     () => ({
       // Radio data
@@ -189,50 +272,55 @@ export default function RadioClient({ children }: RadioClientProps) {
   );
 
   return (
-    <RadioProvider value={contextValue}>
-      {/* Audio player with error boundary */}
-      <PlayerErrorBoundary
-        onRetry={() => {
-          audioPlayer.setStreamUrl(audioPlayer.streamUrl);
-        }}
-        showMiniPlayer={false}
-      >
-        <audio 
-          ref={audioPlayer.audioRef} 
-          crossOrigin="anonymous"
-          playsInline
-          preload="none"
-          controls={false}
-          style={{ display: 'none' }}
-        />
-      </PlayerErrorBoundary>
-
-      {/* Visualizer components removed for simplified version */}
-
-      <div className="flex flex-col text-foreground h-svh overflow-hidden selection:bg-primary/40 selection:text-foreground">
-        {/* Header with navigation */}
-        <div className="flex items-center justify-between p-4 border-b border-border/40">
-          <h1 className="text-2xl font-bold">OADRO Radio</h1>
-          <Link
-            href="/about"
-            className="flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors px-3 py-2 rounded-lg hover:bg-accent"
+    <MetadataProvider value={metadataContextValue}>
+      <AudioProvider value={audioContextValue}>
+        <RadioProvider value={contextValue}>
+          {/* Audio player with error boundary */}
+          <PlayerErrorBoundary
+            onRetry={() => {
+              audioPlayer.setStreamUrl(audioPlayer.streamUrl);
+            }}
+            showMiniPlayer={false}
           >
-            <Info className="w-4 h-4" />
-            <span className="hidden sm:inline">About</span>
-          </Link>
-        </div>
+            <audio
+              ref={audioPlayer.audioRef}
+              crossOrigin="anonymous"
+              playsInline
+              preload="none"
+              controls={false}
+              style={{ display: 'none' }}
+            />
+          </PlayerErrorBoundary>
 
-        {/* Main radio view */}
-        <div className="flex-1 min-h-0 overflow-y-auto p-2 sm:p-4">
-          <ErrorBoundary isolate={true}>
-            <AsyncBoundary maxRetries={1}>
-              <PlayerErrorBoundary showMiniPlayer={false}>
-                <RadioView />
-              </PlayerErrorBoundary>
-            </AsyncBoundary>
-          </ErrorBoundary>
-        </div>
-      </div>
-    </RadioProvider>
+          {/* Visualizer components removed for simplified version */}
+
+          <div className="flex flex-col text-foreground h-svh overflow-hidden selection:bg-primary/40 selection:text-foreground">
+            {/* Header with navigation */}
+            <div className="flex items-center justify-between p-4 border-b border-border/40">
+              <h1 className="text-2xl font-bold">OADRO Radio</h1>
+              <Link
+                href="/about"
+                className="flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors px-3 py-2 rounded-lg hover:bg-accent focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2"
+                aria-label="About OADRO Radio"
+              >
+                <Info className="w-4 h-4" aria-hidden="true" />
+                <span className="hidden sm:inline">About</span>
+              </Link>
+            </div>
+
+            {/* Main radio view */}
+            <div className="flex-1 min-h-0 overflow-y-auto p-2 sm:p-4">
+              <ErrorBoundary isolate={true}>
+                <AsyncBoundary maxRetries={1}>
+                  <PlayerErrorBoundary showMiniPlayer={false}>
+                    <RadioView />
+                  </PlayerErrorBoundary>
+                </AsyncBoundary>
+              </ErrorBoundary>
+            </div>
+          </div>
+        </RadioProvider>
+      </AudioProvider>
+    </MetadataProvider>
   );
 }

@@ -85,11 +85,42 @@ export function useAudioPlayer(forceSseReconnect?: () => void) {
     fragLoadingRetryDelay: 1000,
   }), [isMobile]);
 
-  // Enhanced error handling
-  const handleError = useCallback((error: string, context?: string) => {
+  // Enhanced error handling with retry logic
+  const retryAttemptsRef = useRef(0);
+  const maxRetries = 3;
+  
+  const handleError = useCallback((error: string, context?: string, recoverable = true) => {
+    const errorObj = {
+      message: error,
+      context: context || 'Unknown',
+      timestamp: Date.now(),
+      recoverable,
+      attempt: retryAttemptsRef.current
+    };
+    
+    // Log to monitoring service in production
+    if (process.env.NODE_ENV === 'production') {
+      // Send to error tracking service (implement as needed)
+      console.error('[AudioPlayer] Production Error:', errorObj);
+    }
+    
     console.error(`[AudioPlayer] ${context || 'Error'}:`, error);
     setState(prev => ({ ...prev, error, isLoading: false }));
   }, []);
+
+  // Exponential backoff retry logic
+  const retryWithBackoff = useCallback((retryFn: () => void, attempt = 0) => {
+    if (attempt >= maxRetries) {
+      handleError('Max retry attempts reached', 'Retry Logic', false);
+      return;
+    }
+    
+    const delay = Math.min(1000 * Math.pow(2, attempt), 10000); // Cap at 10 seconds
+    setTimeout(() => {
+      retryAttemptsRef.current = attempt + 1;
+      retryFn();
+    }, delay);
+  }, [handleError, maxRetries]);
 
   // Clear error state
   const clearError = useCallback(() => {
