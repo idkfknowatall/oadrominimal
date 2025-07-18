@@ -37,7 +37,6 @@ const fetcher = async (url: string) => {
       signal: controller.signal,
       headers: {
         'Accept': 'application/json',
-        'Cache-Control': 'no-cache',
       },
     });
 
