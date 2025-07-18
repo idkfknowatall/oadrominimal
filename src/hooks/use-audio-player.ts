@@ -294,18 +294,45 @@ export function useAudioPlayer(forceSseReconnect?: () => void) {
         hlsRef.current = hls;
 
         hls.on(Hls.Events.ERROR, (event, data) => {
-          console.error(
-            '[AudioPlayer] HLS error:',
-            data.type,
-            data.details,
-            data
-          );
           if (data.fatal) {
+            console.error(
+              '[AudioPlayer] Fatal HLS error:',
+              data.type,
+              data.details,
+              data
+            );
             handleError('Fatal HLS error - falling back to MP3', 'HLS Fatal');
             // Destroy HLS instance and fallback to MP3
             hls.destroy();
             hlsRef.current = null;
             fallbackToMp3();
+          } else {
+            // Non-fatal errors are handled automatically by HLS.js
+            // Only log them in development for debugging
+            if (process.env.NODE_ENV === 'development') {
+              console.warn(
+                '[AudioPlayer] Non-fatal HLS warning:',
+                data.type,
+                data.details
+              );
+            }
+            
+            // Handle specific recoverable errors
+            switch (data.details) {
+              case 'bufferStalledError':
+                // Buffer stalled - HLS.js will automatically recover
+                // No action needed, this is normal during network fluctuations
+                break;
+              case 'bufferSeekOverHole':
+                // Seek over buffer hole - HLS.js will handle this
+                break;
+              case 'fragLoadError':
+                // Fragment load error - HLS.js will retry automatically
+                break;
+              default:
+                // Other non-fatal errors - let HLS.js handle them
+                break;
+            }
           }
         });
 
