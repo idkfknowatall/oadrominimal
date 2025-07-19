@@ -1,7 +1,8 @@
-'use client';
-
 import { ArrowLeft, Server, Users, TrendingUp, MessageCircle, Zap, Shield, Headphones, Star } from 'lucide-react';
 import Link from 'next/link';
+import { servicesMetadata } from './metadata';
+
+export const metadata = servicesMetadata;
 
 export default function ServicesPage() {
   return (
@@ -29,12 +30,12 @@ export default function ServicesPage() {
           <section className="text-center space-y-6">
             <div className="flex items-center justify-center gap-3">
               <Headphones className="w-12 h-12 text-primary" />
-              <h2 className="text-4xl font-bold">Managed Radio Service & Hosting</h2>
+              <h2 className="text-4xl font-bold">AI Music Community & Radio Hosting</h2>
             </div>
             
             <p className="text-xl text-muted-foreground leading-relaxed max-w-3xl mx-auto">
-              Professional radio station hosting and management services. We provide completely managed,
-              cheap and affordable radio solutions with premium audio processing, reliable hosting, and full technical support.
+              Join the premier AI music community featuring Discord AI radio, AI-assisted music generation, and professional radio hosting.
+              Experience AI-generated songs from Suno, Udio, Riffusion, and connect with our vibrant Discord AI music community for AI-assisted generated songs.
             </p>
 
             <div className="bg-gradient-to-r from-primary/20 to-purple-500/20 border border-primary/30 rounded-lg p-6">
@@ -45,6 +46,66 @@ export default function ServicesPage() {
               <p className="text-lg text-muted-foreground">
                 We handle all the technical complexity of running a professional radio station so you can focus on what matters most -
                 creating great content and building your audience. From setup to ongoing support, we've got you covered.
+              </p>
+            </div>
+          </section>
+
+          {/* AI Music Community Section */}
+          <section className="space-y-8">
+            <h2 className="text-3xl font-bold text-center">AI Music Community Features</h2>
+            
+            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+              {/* Suno AI Community */}
+              <div className="bg-card border border-border/40 rounded-lg p-6 hover:border-primary/50 transition-colors">
+                <div className="flex items-center gap-3 mb-4">
+                  <Users className="w-8 h-8 text-primary" />
+                  <h3 className="text-xl font-semibold">AI Community Suno</h3>
+                </div>
+                <ul className="space-y-2 text-muted-foreground">
+                  <li>• Dedicated Suno AI music channels</li>
+                  <li>• AI-assisted music generation</li>
+                  <li>• Community sharing and feedback</li>
+                  <li>• Collaborative AI music projects</li>
+                  <li>• Expert tips and tutorials</li>
+                </ul>
+              </div>
+
+              {/* Udio AI Community */}
+              <div className="bg-card border border-border/40 rounded-lg p-6 hover:border-primary/50 transition-colors">
+                <div className="flex items-center gap-3 mb-4">
+                  <Users className="w-8 h-8 text-primary" />
+                  <h3 className="text-xl font-semibold">AI Community Udio</h3>
+                </div>
+                <ul className="space-y-2 text-muted-foreground">
+                  <li>• Udio AI music creation space</li>
+                  <li>• AI-generated song showcases</li>
+                  <li>• Community challenges and contests</li>
+                  <li>• Advanced AI music techniques</li>
+                  <li>• Real-time collaboration tools</li>
+                </ul>
+              </div>
+
+              {/* Riffusion AI Community */}
+              <div className="bg-card border border-border/40 rounded-lg p-6 hover:border-primary/50 transition-colors">
+                <div className="flex items-center gap-3 mb-4">
+                  <Users className="w-8 h-8 text-primary" />
+                  <h3 className="text-xl font-semibold">AI Community Riffusion</h3>
+                </div>
+                <ul className="space-y-2 text-muted-foreground">
+                  <li>• Riffusion AI experimentation</li>
+                  <li>• Spectogram-based music generation</li>
+                  <li>• AI-assisted generated songs</li>
+                  <li>• Community research and development</li>
+                  <li>• Open-source AI music tools</li>
+                </ul>
+              </div>
+            </div>
+
+            <div className="bg-gradient-to-r from-primary/10 to-purple-500/10 border border-primary/20 rounded-lg p-6 text-center">
+              <h3 className="text-2xl font-semibold mb-4">Discord AI Music Community</h3>
+              <p className="text-lg text-muted-foreground">
+                Join thousands of AI music enthusiasts in our Discord AI music community. Share your AI-assisted music,
+                discover new AI-generated songs, and collaborate with fellow creators using Suno, Udio, Riffusion, and other cutting-edge AI music tools.
               </p>
             </div>
           </section>
