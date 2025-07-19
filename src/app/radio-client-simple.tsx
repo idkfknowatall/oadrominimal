@@ -388,23 +388,23 @@ export default function RadioClient({ children }: RadioClientProps) {
 
             <div className="flex flex-col text-foreground h-svh overflow-hidden selection:bg-primary/40 selection:text-foreground">
               {/* Header with navigation */}
-              <div className="flex items-center justify-between p-4 border-b border-border/40">
-                <h1 className="text-lg font-bold">OADRO Radio</h1>
-                <nav className="flex items-center gap-4">
+              <div className="flex items-center justify-between md:justify-center p-4 border-b border-border/40 relative">
+                <h1 className="text-lg font-bold md:absolute md:left-4">OADRO Radio</h1>
+                <nav className="flex items-center gap-2 md:gap-6 bg-accent/50 rounded-full px-4 py-2 backdrop-blur-sm border border-border/20">
                   <Link
                     href="/services"
-                    className="flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors px-3 py-2 rounded-lg hover:bg-accent focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2"
+                    className="flex items-center gap-2 text-muted-foreground hover:text-foreground transition-all duration-200 px-4 py-2 rounded-full hover:bg-primary/20 hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 font-medium"
                     aria-label="Services"
                   >
-                    <span className="hidden sm:inline">Services</span>
+                    <span className="text-sm md:text-base">Services</span>
                   </Link>
                   <Link
                     href="/about"
-                    className="flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors px-3 py-2 rounded-lg hover:bg-accent focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2"
+                    className="flex items-center gap-2 text-muted-foreground hover:text-foreground transition-all duration-200 px-4 py-2 rounded-full hover:bg-primary/20 hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 font-medium"
                     aria-label="About OADRO Radio"
                   >
                     <Info className="w-4 h-4" aria-hidden="true" />
-                    <span className="hidden sm:inline">About</span>
+                    <span className="text-sm md:text-base">About</span>
                   </Link>
                 </nav>
               </div>
