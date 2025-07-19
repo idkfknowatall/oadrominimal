@@ -390,14 +390,23 @@ export default function RadioClient({ children }: RadioClientProps) {
               {/* Header with navigation */}
               <div className="flex items-center justify-between p-4 border-b border-border/40">
                 <h1 className="text-lg font-bold">OADRO Radio</h1>
-                <Link
-                  href="/about"
-                  className="flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors px-3 py-2 rounded-lg hover:bg-accent focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2"
-                  aria-label="About OADRO Radio"
-                >
-                  <Info className="w-4 h-4" aria-hidden="true" />
-                  <span className="hidden sm:inline">About</span>
-                </Link>
+                <nav className="flex items-center gap-4">
+                  <Link
+                    href="/services"
+                    className="flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors px-3 py-2 rounded-lg hover:bg-accent focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2"
+                    aria-label="Services"
+                  >
+                    <span className="hidden sm:inline">Services</span>
+                  </Link>
+                  <Link
+                    href="/about"
+                    className="flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors px-3 py-2 rounded-lg hover:bg-accent focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2"
+                    aria-label="About OADRO Radio"
+                  >
+                    <Info className="w-4 h-4" aria-hidden="true" />
+                    <span className="hidden sm:inline">About</span>
+                  </Link>
+                </nav>
               </div>
 
               {/* Main radio view */}
