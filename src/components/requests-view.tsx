@@ -212,7 +212,7 @@ export default function RequestsView() {
   }
 
   return (
-    <div className="w-full max-w-6xl mx-auto p-4 space-y-6 min-h-screen">
+    <div className="w-full max-w-6xl mx-auto space-y-6">
       {/* Header */}
       <div className="text-center mb-8">
         <h1 className="text-3xl font-bold text-foreground mb-2">Request a Song</h1>

@@ -1,5 +1,5 @@
-import RadioClient from './radio-client-simple';
+import RadioView from '@/components/views/radio-view-simple';
 
 export default function RootPage() {
-  return <RadioClient />;
+  return <RadioView />;
 }

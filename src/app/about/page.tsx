@@ -1,29 +1,18 @@
 'use client';
 
-import { ArrowLeft, Music, Users, Zap, Volume2, Waves, Settings, Headphones } from 'lucide-react';
+import { Music, Users, Zap, Volume2, Waves, Settings, Headphones } from 'lucide-react';
 import Link from 'next/link';
 
 export default function AboutPage() {
   return (
-    <div className="h-screen bg-background text-foreground flex flex-col">
-      {/* Header */}
-      <div className="border-b border-border/40 p-4 flex-shrink-0">
-        <div className="max-w-4xl mx-auto flex items-center gap-4">
-          <Link
-            href="/"
-            className="flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors"
-          >
-            <ArrowLeft className="w-5 h-5" />
-            Back to Radio
-          </Link>
-          <div className="h-6 w-px bg-border/40" />
-          <h1 className="text-2xl font-bold">About OADRO Radio</h1>
-        </div>
+    <div className="max-w-4xl mx-auto space-y-12">
+      {/* Page Header */}
+      <div className="text-center mb-8">
+        <h1 className="text-3xl font-bold text-foreground mb-2">About OADRO Radio</h1>
+        <p className="text-muted-foreground">
+          Learn about our community-driven platform and advanced audio technology
+        </p>
       </div>
-
-      {/* Main Content - Scrollable */}
-      <div className="flex-1 overflow-y-auto">
-        <div className="max-w-4xl mx-auto p-6 space-y-12 pb-20">
         {/* Community Section */}
         <section className="space-y-6">
           <div className="flex items-center gap-3">
@@ -240,8 +229,6 @@ export default function AboutPage() {
             </Link>
           </div>
         </section>
-        </div>
-      </div>
     </div>
   );
 }
