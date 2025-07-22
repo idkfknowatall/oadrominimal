@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 // Removed unused imports: dynamic, AnimatePresence
 import Link from 'next/link';
-import { Info, Calendar } from 'lucide-react';
+import { Info, Calendar, Music } from 'lucide-react';
 import { SWRConfig } from 'swr';
 
 import RadioView from '@/components/views/radio-view-simple';
@@ -391,6 +391,14 @@ export default function RadioClient({ children }: RadioClientProps) {
               <div className="flex items-center justify-between md:justify-center p-6 border-b border-border/20 relative">
                 <h1 className="text-lg font-semibold tracking-wide md:absolute md:left-6">OADRO Radio</h1>
                 <nav className="flex items-center gap-1 bg-card/50 backdrop-blur-sm rounded-lg border border-border/20 p-1 shadow-sm">
+                  <Link
+                    href="/requests"
+                    className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-muted/30 rounded-md transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-ring focus:bg-muted/30"
+                    aria-label="Song Requests"
+                  >
+                    <Music className="w-4 h-4" aria-hidden="true" />
+                    <span className="hidden sm:inline">Requests</span>
+                  </Link>
                   <Link
                     href="/schedule"
                     className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-muted/30 rounded-md transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-ring focus:bg-muted/30"
