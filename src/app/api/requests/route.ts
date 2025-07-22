@@ -26,6 +26,7 @@ function errorToResponse(error: ApiError): NextResponse {
 
 export async function GET() {
   try {
+    // Fetch requestable songs from AzuraCast
     const requestsUrl = `${AZURACAST_BASE_URL}/api/station/${AZURACAST_STATION_NAME}/requests`;
     
     // Fetch requestable songs from AzuraCast

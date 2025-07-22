@@ -8,6 +8,8 @@ export interface RequestableSong {
   song: {
     id: string;
     art: string;
+    length?: number; // Duration in seconds
+    length_text?: string; // Formatted duration like "3:45"
     custom_fields: {
       creator_discord_id?: string | null;
       song_bandcamp?: string | null;

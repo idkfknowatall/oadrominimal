@@ -183,7 +183,7 @@ export default function RequestsView() {
     isLoading,
     error,
     refresh,
-  } = useFilteredRequests(12);
+  } = useFilteredRequests(9);
 
   const { submitRequest, isSubmitting, lastSubmission, clearLastSubmission } = useRequestSubmission();
 
@@ -260,7 +260,7 @@ export default function RequestsView() {
       {/* Songs Grid */}
       {isLoading ? (
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-          {Array.from({ length: 12 }).map((_, i) => (
+          {Array.from({ length: 9 }).map((_, i) => (
             <Card key={i}>
               <CardContent className="p-4">
                 <div className="flex items-start gap-4">
