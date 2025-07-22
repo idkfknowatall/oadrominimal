@@ -29,7 +29,6 @@ export async function GET() {
     // Fetch requestable songs from AzuraCast
     const requestsUrl = `${AZURACAST_BASE_URL}/api/station/${AZURACAST_STATION_NAME}/requests`;
     
-    // Fetch requestable songs from AzuraCast
     const response = await fetch(requestsUrl, {
       headers: {
         'Accept': 'application/json',

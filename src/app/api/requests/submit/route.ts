@@ -56,10 +56,16 @@ export async function POST(request: NextRequest) {
     });
 
     if (!response.ok) {
-      const errorText = await response.text();
+      let errorData;
+      try {
+        errorData = await response.json();
+      } catch {
+        errorData = { message: await response.text() };
+      }
+      
       console.error(
         `Failed to submit request: ${response.status} ${response.statusText}`,
-        errorText
+        errorData
       );
       
       // Handle specific AzuraCast error responses
@@ -71,10 +77,15 @@ export async function POST(request: NextRequest) {
         return errorToResponse(
           new ApiError('Song not found or no longer available for request.', 404, 'SONG_NOT_FOUND')
         );
+      } else if (response.status === 500 && errorData.message) {
+        // Handle AzuraCast's specific error messages (like cooldown periods)
+        return errorToResponse(
+          new ApiError(errorData.message, 400, 'AZURACAST_RESTRICTION')
+        );
       } else {
         return errorToResponse(
           new ApiError(
-            `Failed to submit song request: ${response.status}`,
+            errorData.message || `Failed to submit song request: ${response.status}`,
             response.status,
             'EXTERNAL_API_ERROR'
           )
