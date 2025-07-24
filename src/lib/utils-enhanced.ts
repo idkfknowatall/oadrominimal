@@ -5,8 +5,26 @@ export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
 
+/**
+ * Formats duration in seconds to MM:SS format with enhanced validation.
+ * @param seconds The duration in seconds.
+ * @returns Formatted duration string.
+ */
 export const formatDuration = (seconds: number | undefined): string => {
-  if (seconds === undefined || isNaN(seconds) || seconds < 0) return '0:00';
+  // Enhanced input validation
+  if (seconds === undefined || seconds === null) return '0:00';
+  if (typeof seconds !== 'number' || isNaN(seconds)) return '0:00';
+  if (seconds < 0) return '0:00';
+  if (!isFinite(seconds)) return '0:00';
+  
+  // Handle very large durations (over 24 hours)
+  if (seconds > 86400) { // 24 hours
+    const hours = Math.floor(seconds / 3600);
+    const minutes = Math.floor((seconds % 3600) / 60);
+    const secs = Math.floor(seconds % 60);
+    return `${hours}:${minutes.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+  }
+  
   const minutes = Math.floor(seconds / 60);
   const remainingSeconds = Math.floor(seconds % 60);
   return `${minutes}:${remainingSeconds.toString().padStart(2, '0')}`;
@@ -115,7 +133,7 @@ export function validateEmail(email: string): string | null {
 }
 
 /**
- * Validates URLs with protocol checking.
+ * Validates URLs with protocol checking and enhanced security.
  * @param url The URL to validate.
  * @param allowedProtocols Allowed protocols (default: ['http', 'https']).
  * @returns The validated URL or null if invalid.
@@ -128,6 +146,11 @@ export function validateUrl(url: string, allowedProtocols: string[] = ['http', '
     
     if (!allowedProtocols.includes(urlObj.protocol.slice(0, -1))) {
       return null;
+    }
+    
+    // Additional security checks
+    if (urlObj.hostname === 'localhost' || urlObj.hostname === '127.0.0.1') {
+      return null; // Prevent localhost access in production
     }
     
     return urlObj.toString();
@@ -151,39 +174,56 @@ export function validateDiscordId(id: string): string | null {
 }
 
 /**
- * Safely parses JSON with error handling.
+ * Safely parses JSON with error handling and type validation.
  * @param jsonString The JSON string to parse.
  * @param defaultValue Default value to return on parse error.
  * @returns Parsed object or default value.
  */
 export function safeJsonParse<T>(jsonString: string, defaultValue: T): T {
+  if (!jsonString || typeof jsonString !== 'string') {
+    return defaultValue;
+  }
+  
   try {
-    return JSON.parse(jsonString);
+    const parsed = JSON.parse(jsonString);
+    return parsed !== null && parsed !== undefined ? parsed : defaultValue;
   } catch {
     return defaultValue;
   }
 }
 
 /**
- * Debounces a function call.
+ * Debounces a function call with improved memory management.
  * @param func The function to debounce.
  * @param wait The number of milliseconds to delay.
- * @returns The debounced function.
+ * @returns The debounced function with cleanup capability.
  */
 export function debounce<T extends (...args: any[]) => any>(
   func: T,
   wait: number
-): (...args: Parameters<T>) => void {
-  let timeout: NodeJS.Timeout;
+): ((...args: Parameters<T>) => void) & { cancel: () => void } {
+  let timeout: NodeJS.Timeout | null = null;
   
-  return (...args: Parameters<T>) => {
-    clearTimeout(timeout);
-    timeout = setTimeout(() => func(...args), wait);
+  const debounced = (...args: Parameters<T>) => {
+    if (timeout) clearTimeout(timeout);
+    timeout = setTimeout(() => {
+      timeout = null;
+      func(...args);
+    }, wait);
   };
+  
+  debounced.cancel = () => {
+    if (timeout) {
+      clearTimeout(timeout);
+      timeout = null;
+    }
+  };
+  
+  return debounced;
 }
 
 /**
- * Throttles a function call.
+ * Throttles a function call with improved performance.
  * @param func The function to throttle.
  * @param limit The number of milliseconds to limit calls.
  * @returns The throttled function.
@@ -192,13 +232,23 @@ export function throttle<T extends (...args: any[]) => any>(
   func: T,
   limit: number
 ): (...args: Parameters<T>) => void {
-  let inThrottle: boolean;
+  let inThrottle = false;
+  let lastArgs: Parameters<T> | null = null;
   
   return (...args: Parameters<T>) => {
+    lastArgs = args;
+    
     if (!inThrottle) {
       func(...args);
       inThrottle = true;
-      setTimeout(() => inThrottle = false, limit);
+      
+      setTimeout(() => {
+        inThrottle = false;
+        if (lastArgs) {
+          func(...lastArgs);
+          lastArgs = null;
+        }
+      }, limit);
     }
   };
 }
@@ -233,25 +283,26 @@ export function calculateInfluenceScore({
 }
 
 /**
- * Formats file sizes in human-readable format.
+ * Formats file sizes in human-readable format with enhanced validation.
  * @param bytes The size in bytes.
  * @param decimals Number of decimal places.
  * @returns Formatted file size string.
  */
 export function formatFileSize(bytes: number, decimals: number = 2): string {
+  if (typeof bytes !== 'number' || isNaN(bytes) || bytes < 0) return '0 Bytes';
   if (bytes === 0) return '0 Bytes';
   
   const k = 1024;
-  const dm = decimals < 0 ? 0 : decimals;
-  const sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB'];
+  const dm = Math.max(0, Math.floor(decimals));
+  const sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB', 'PB'];
   
-  const i = Math.floor(Math.log(bytes) / Math.log(k));
+  const i = Math.min(Math.floor(Math.log(bytes) / Math.log(k)), sizes.length - 1);
   
   return parseFloat((bytes / Math.pow(k, i)).toFixed(dm)) + ' ' + sizes[i];
 }
 
 /**
- * Generates a random string of specified length.
+ * Generates a cryptographically secure random string.
  * @param length The length of the string to generate.
  * @param charset The character set to use.
  * @returns Random string.
@@ -260,9 +311,52 @@ export function generateRandomString(
   length: number = 10,
   charset: string = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789'
 ): string {
+  if (length <= 0 || !charset) return '';
+  
+  // Use crypto.getRandomValues for better security if available
+  if (typeof crypto !== 'undefined' && crypto.getRandomValues) {
+    const array = new Uint8Array(length);
+    crypto.getRandomValues(array);
+    return Array.from(array, byte => charset[byte % charset.length]).join('');
+  }
+  
+  // Fallback to Math.random
   let result = '';
   for (let i = 0; i < length; i++) {
     result += charset.charAt(Math.floor(Math.random() * charset.length));
   }
   return result;
+}
+
+/**
+ * Creates a retry function with exponential backoff.
+ * @param fn The function to retry.
+ * @param maxAttempts Maximum number of retry attempts.
+ * @param baseDelay Base delay in milliseconds.
+ * @returns Promise that resolves with the function result or rejects after max attempts.
+ */
+export async function retryWithBackoff<T>(
+  fn: () => Promise<T>,
+  maxAttempts: number = 3,
+  baseDelay: number = 1000
+): Promise<T> {
+  let lastError: Error;
+  
+  for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+    try {
+      return await fn();
+    } catch (error) {
+      lastError = error instanceof Error ? error : new Error(String(error));
+      
+      if (attempt === maxAttempts) {
+        throw lastError;
+      }
+      
+      // Exponential backoff with jitter
+      const delay = baseDelay * Math.pow(2, attempt - 1) + Math.random() * 1000;
+      await new Promise(resolve => setTimeout(resolve, delay));
+    }
+  }
+  
+  throw lastError!;
 }

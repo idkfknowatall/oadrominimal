@@ -30,4 +30,10 @@ export function getRadioWorker(): SimpleRadioWorker {
 }
 
 // Export the singleton instance
-export const radioWorker = getRadioWorker();
+/**
+ * Gets the singleton radio worker instance (lazy initialization)
+ * Only creates the instance when actually needed at runtime
+ */
+export function getRadioWorkerSingleton(): SimpleRadioWorker {
+  return getRadioWorker();
+}

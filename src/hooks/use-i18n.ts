@@ -10,7 +10,6 @@ export interface TranslationKeys {
   'nav.schedule': string;
   'nav.requests': string;
   'nav.about': string;
-  'nav.services': string;
   'player.play': string;
   'player.pause': string;
   'player.volume': string;
@@ -106,7 +105,6 @@ const defaultTranslations: TranslationKeys = {
   'nav.schedule': 'Schedule',
   'nav.requests': 'Requests',
   'nav.about': 'About',
-  'nav.services': 'Services',
   'player.play': 'Play',
   'player.pause': 'Pause',
   'player.volume': 'Volume',

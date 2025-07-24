@@ -426,17 +426,6 @@ export default function PersistentRadioProvider({ children }: PersistentRadioPro
                     <span className="hidden sm:inline">Schedule</span>
                   </Link>
                   <Link
-                    href="/services"
-                    className={`px-4 py-2 text-sm font-medium rounded-md transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-ring ${
-                      pathname === '/services' 
-                        ? 'text-foreground bg-muted/50' 
-                        : 'text-muted-foreground hover:text-foreground hover:bg-muted/30'
-                    }`}
-                    aria-label="Services"
-                  >
-                    Services
-                  </Link>
-                  <Link
                     href="/about"
                     className={`flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-md transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-ring ${
                       pathname === '/about' 

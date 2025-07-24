@@ -2,7 +2,7 @@
  * Simplified radio stream API endpoint
  */
 import { NextRequest } from 'next/server';
-import { radioWorker } from '@/lib/radio-simple';
+import { getRadioWorkerSingleton } from '@/lib/radio-simple';
 import { subscribe, type PubSubEvent } from '@/lib/interaction-stream';
 
 export const dynamic = 'force-dynamic';
@@ -24,7 +24,7 @@ function writeSseEvent(
 
 export async function GET(request: NextRequest) {
   // Ensure the background worker is running
-  const worker = radioWorker;
+  const worker = getRadioWorkerSingleton();
 
   // Explicitly start the worker to ensure it's running
   const startResult = await worker.start();

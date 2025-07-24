@@ -1,6 +1,6 @@
 import type { Metadata, Viewport } from 'next';
 import './globals.css';
-import '@/lib/radio-simple'; // This will initialize and start the simplified radio worker
+
 import { Toaster } from '@/components/ui/toaster';
 import { ThemeProvider } from '@/components/theme-provider';
 import { inter, spaceGrotesk } from './fonts';
@@ -10,6 +10,7 @@ import AsyncBoundary from '@/components/async-boundary';
 import PersistentRadioProvider from '@/components/persistent-radio-provider';
 
 export const metadata: Metadata = {
+  metadataBase: new URL('https://radio.oadro.com'),
   applicationName: 'OADRO Radio',
   title: 'OADRO Radio - AI Music Community & Discord AI Radio',
   description: 'AI-powered radio experience featuring AI-assisted music, AI-generated songs, and Discord AI music community. Join our AI community for Suno, Udio, Riffusion, and AI-assisted generated songs.',
