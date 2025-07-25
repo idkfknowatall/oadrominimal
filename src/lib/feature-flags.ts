@@ -14,6 +14,14 @@ interface FeatureFlags {
   maxRetryAttempts: number;
   circuitBreakerThreshold: number;
   performanceMetricsEnabled: boolean;
+  
+  // Voting system feature flags
+  enableVoteDebouncing: boolean;
+  enableVotingCache: boolean;
+  enableVotingPerformanceMonitoring: boolean;
+  enableVotingSubscriptionPooling: boolean;
+  enableVotingRateLimit: boolean;
+  votingRateLimitPerMinute: number;
 }
 
 // Default feature flag values
@@ -29,6 +37,14 @@ const defaultFlags: FeatureFlags = {
   maxRetryAttempts: 3,
   circuitBreakerThreshold: 5,
   performanceMetricsEnabled: true,
+  
+  // Voting system defaults
+  enableVoteDebouncing: true,
+  enableVotingCache: true,
+  enableVotingPerformanceMonitoring: true,
+  enableVotingSubscriptionPooling: true,
+  enableVotingRateLimit: true,
+  votingRateLimitPerMinute: 30,
 };
 
 // Environment-based feature flags
@@ -48,6 +64,14 @@ const getFeatureFlags = (): FeatureFlags => {
       maxRetryAttempts: parseInt(process.env.NEXT_PUBLIC_MAX_RETRY_ATTEMPTS || '3', 10),
       circuitBreakerThreshold: parseInt(process.env.NEXT_PUBLIC_CIRCUIT_BREAKER_THRESHOLD || '5', 10),
       performanceMetricsEnabled: process.env.NEXT_PUBLIC_PERFORMANCE_METRICS_ENABLED !== 'false',
+      
+      // Voting system server-side flags
+      enableVoteDebouncing: process.env.NEXT_PUBLIC_ENABLE_VOTE_DEBOUNCING !== 'false',
+      enableVotingCache: process.env.NEXT_PUBLIC_ENABLE_VOTING_CACHE !== 'false',
+      enableVotingPerformanceMonitoring: process.env.NEXT_PUBLIC_ENABLE_VOTING_PERFORMANCE_MONITORING !== 'false',
+      enableVotingSubscriptionPooling: process.env.NEXT_PUBLIC_ENABLE_VOTING_SUBSCRIPTION_POOLING !== 'false',
+      enableVotingRateLimit: process.env.NEXT_PUBLIC_ENABLE_VOTING_RATE_LIMIT !== 'false',
+      votingRateLimitPerMinute: parseInt(process.env.NEXT_PUBLIC_VOTING_RATE_LIMIT_PER_MINUTE || '30', 10),
     };
   }
 

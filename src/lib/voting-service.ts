@@ -1,6 +1,7 @@
 /**
- * Voting Service Interface and Firebase Implementation
+ * Unified Voting Service with Optional Performance Enhancements
  * Handles vote submission, retrieval, and real-time updates for the Discord voting system
+ * Consolidates basic and optimized implementations with feature flags
  */
 
 import {
@@ -32,6 +33,8 @@ import {
   subscriptionPool, 
   performanceMonitor 
 } from './voting-performance';
+import { featureFlags } from './voting-feature-flags';
+import { votingRateLimiter, RateLimitError } from './voting-rate-limiter';
 
 /**
  * Interface for voting service operations
@@ -78,9 +81,9 @@ export interface VotingService {
 }
 
 /**
- * Firebase implementation of the VotingService
+ * Unified Firebase implementation of the VotingService with optional performance enhancements
  */
-export class FirebaseVotingService implements VotingService {
+export class UnifiedFirebaseVotingService implements VotingService {
   private db: Firestore | null = null;
 
   private getDb(): Firestore {
@@ -91,7 +94,7 @@ export class FirebaseVotingService implements VotingService {
   }
 
   /**
-   * Submit or update a vote for a song with enhanced error handling
+   * Submit or update a vote for a song with optional debouncing and performance monitoring
    */
   async submitVote(
     songId: string,
@@ -127,9 +130,87 @@ export class FirebaseVotingService implements VotingService {
       throw error;
     }
 
-    return withEnhancedRetry(async () => {
-      await this.submitVoteInternal(songId, userId, voteType, songTitle, songArtist);
-    }, 'Vote Submission');
+    // Performance monitoring (if enabled)
+    if (featureFlags.enableVotingPerformanceMonitoring) {
+      performanceMonitor.recordVoteAttempt();
+    }
+    const startTime = Date.now();
+
+    // Rate limiting check (if enabled)
+    if (featureFlags.enableVotingRateLimit && !votingRateLimiter.canVote(userId)) {
+      const remainingTime = votingRateLimiter.getResetTime(userId);
+      const remainingVotes = votingRateLimiter.getRemainingVotes(userId);
+      throw new RateLimitError(
+        'Too many vote requests. Please wait before voting again.',
+        remainingTime,
+        remainingVotes
+      );
+    }
+
+    try {
+      // Use debouncing for performance optimization (if enabled)
+      if (featureFlags.enableVoteDebouncing) {
+        const debounceKey = `${userId}:${songId}`;
+        await voteDebouncer.debounceVote(debounceKey, voteType, async (finalVoteType) => {
+          await withEnhancedRetry(async () => {
+            await this.submitVoteInternal(songId, userId, finalVoteType, songTitle, songArtist);
+          }, 'Vote Submission');
+        });
+
+        // Optimistic cache update (if caching enabled)
+        if (featureFlags.enableVotingCache) {
+          this.updateCacheOptimistically(songId, userId, voteType);
+        }
+      } else {
+        // Basic implementation without debouncing
+        await withEnhancedRetry(async () => {
+          await this.submitVoteInternal(songId, userId, voteType, songTitle, songArtist);
+        }, 'Vote Submission');
+      }
+
+      // Performance monitoring
+      if (featureFlags.enableVotingPerformanceMonitoring) {
+        const responseTime = Date.now() - startTime;
+        performanceMonitor.recordVoteSuccess(responseTime);
+      }
+    } catch (error) {
+      if (featureFlags.enableVotingPerformanceMonitoring) {
+        const responseTime = Date.now() - startTime;
+        performanceMonitor.recordVoteFailure(responseTime);
+      }
+      throw error;
+    }
+  }
+
+  /**
+   * Optimistically update cache for better UX
+   */
+  private updateCacheOptimistically(songId: string, userId: string, voteType: 'like' | 'dislike'): void {
+    const currentCached = votingCache.getVoteCount(songId);
+    if (currentCached) {
+      const userCurrentVote = votingCache.getUserVote(songId, userId);
+      const newCounts = { ...currentCached };
+      
+      // Remove old vote if exists
+      if (userCurrentVote === 'like') {
+        newCounts.likes = Math.max(0, newCounts.likes - 1);
+      } else if (userCurrentVote === 'dislike') {
+        newCounts.dislikes = Math.max(0, newCounts.dislikes - 1);
+      }
+      
+      // Add new vote
+      if (voteType === 'like') {
+        newCounts.likes += 1;
+      } else {
+        newCounts.dislikes += 1;
+      }
+      
+      newCounts.total = newCounts.likes + newCounts.dislikes;
+      votingCache.setVoteCount(songId, newCounts);
+    }
+
+    // Cache user vote
+    votingCache.setUserVote(songId, userId, voteType);
   }
 
   /**
@@ -252,7 +333,7 @@ export class FirebaseVotingService implements VotingService {
   }
 
   /**
-   * Get current vote counts for a song with enhanced error handling
+   * Get current vote counts for a song with optional caching and performance monitoring
    */
   async getVoteCounts(songId: string): Promise<VoteCount> {
     if (!songId?.trim()) {
@@ -261,29 +342,63 @@ export class FirebaseVotingService implements VotingService {
       throw error;
     }
 
-    return withEnhancedRetry(async () => {
-      const aggregateRef = doc(this.getDb(), FIREBASE_COLLECTIONS.VOTE_AGGREGATES, songId);
-      const aggregateSnapshot = await getDoc(aggregateRef);
+    // Check cache first (if caching enabled)
+    if (featureFlags.enableVotingCache) {
+      const cached = votingCache.getVoteCount(songId);
+      if (cached) {
+        if (featureFlags.enableVotingPerformanceMonitoring) {
+          performanceMonitor.recordCacheHit();
+        }
+        return cached;
+      }
+      
+      if (featureFlags.enableVotingPerformanceMonitoring) {
+        performanceMonitor.recordCacheMiss();
+      }
+    }
 
-      if (!aggregateSnapshot.exists()) {
+    const startTime = Date.now();
+
+    try {
+      const result = await withEnhancedRetry(async () => {
+        const aggregateRef = doc(this.getDb(), FIREBASE_COLLECTIONS.VOTE_AGGREGATES, songId);
+        const aggregateSnapshot = await getDoc(aggregateRef);
+
+        if (!aggregateSnapshot.exists()) {
+          return { likes: 0, dislikes: 0, total: 0 };
+        }
+
+        const data = aggregateSnapshot.data() as VoteAggregateDocument;
         return {
-          likes: 0,
-          dislikes: 0,
-          total: 0
+          likes: data.likes || 0,
+          dislikes: data.dislikes || 0,
+          total: data.totalVotes || 0
         };
+      }, 'Get Vote Counts');
+
+      // Cache the result (if caching enabled)
+      if (featureFlags.enableVotingCache) {
+        votingCache.setVoteCount(songId, result);
+      }
+      
+      // Performance monitoring
+      if (featureFlags.enableVotingPerformanceMonitoring) {
+        const responseTime = Date.now() - startTime;
+        performanceMonitor.recordVoteSuccess(responseTime);
       }
 
-      const data = aggregateSnapshot.data() as VoteAggregateDocument;
-      return {
-        likes: data.likes || 0,
-        dislikes: data.dislikes || 0,
-        total: data.totalVotes || 0
-      };
-    }, 'Get Vote Counts');
+      return result;
+    } catch (error) {
+      if (featureFlags.enableVotingPerformanceMonitoring) {
+        const responseTime = Date.now() - startTime;
+        performanceMonitor.recordVoteFailure(responseTime);
+      }
+      throw error;
+    }
   }
 
   /**
-   * Get user's current vote for a song with enhanced error handling
+   * Get user's current vote for a song with optional caching
    */
   async getUserVote(songId: string, userId: string): Promise<'like' | 'dislike' | null> {
     if (!songId?.trim()) {
@@ -297,7 +412,22 @@ export class FirebaseVotingService implements VotingService {
       throw error;
     }
 
-    return withEnhancedRetry(async () => {
+    // Check cache first (if caching enabled)
+    if (featureFlags.enableVotingCache) {
+      const cached = votingCache.getUserVote(songId, userId);
+      if (cached !== undefined) {
+        if (featureFlags.enableVotingPerformanceMonitoring) {
+          performanceMonitor.recordCacheHit();
+        }
+        return cached;
+      }
+      
+      if (featureFlags.enableVotingPerformanceMonitoring) {
+        performanceMonitor.recordCacheMiss();
+      }
+    }
+
+    const result = await withEnhancedRetry(async () => {
       const votesRef = collection(this.getDb(), FIREBASE_COLLECTIONS.VOTES);
       const userVoteQuery = query(
         votesRef,
@@ -316,10 +446,17 @@ export class FirebaseVotingService implements VotingService {
       
       return voteData.voteType;
     }, 'Get User Vote');
+
+    // Cache the result (if caching enabled)
+    if (featureFlags.enableVotingCache) {
+      votingCache.setUserVote(songId, userId, result);
+    }
+
+    return result;
   }
 
   /**
-   * Subscribe to real-time vote count updates for a song with enhanced error handling
+   * Subscribe to real-time vote count updates for a song with optional connection pooling
    */
   subscribeToVoteUpdates(songId: string, callback: (votes: VoteCount) => void): Unsubscribe {
     if (!songId?.trim()) {
@@ -333,38 +470,55 @@ export class FirebaseVotingService implements VotingService {
       throw error;
     }
 
+    // Use connection pooling for performance optimization (if enabled)
+    if (featureFlags.enableVotingSubscriptionPooling) {
+      return subscriptionPool.getSubscription(songId, () => {
+        return this.createSubscription(songId);
+      });
+    } else {
+      // Basic subscription without pooling
+      return this.createSubscription(songId);
+    }
+  }
+
+  /**
+   * Create a subscription to vote updates
+   */
+  private createSubscription(songId: string): Unsubscribe {
     const aggregateRef = doc(this.getDb(), FIREBASE_COLLECTIONS.VOTE_AGGREGATES, songId);
 
     return onSnapshot(
       aggregateRef,
       (snapshot) => {
         try {
-          if (!snapshot.exists()) {
-            callback({
-              likes: 0,
-              dislikes: 0,
-              total: 0
-            });
-            return;
-          }
+          const voteCount: VoteCount = snapshot.exists() 
+            ? (() => {
+                const data = snapshot.data() as VoteAggregateDocument;
+                return {
+                  likes: data.likes || 0,
+                  dislikes: data.dislikes || 0,
+                  total: data.totalVotes || 0
+                };
+              })()
+            : { likes: 0, dislikes: 0, total: 0 };
 
-          const data = snapshot.data() as VoteAggregateDocument;
-          callback({
-            likes: data.likes || 0,
-            dislikes: data.dislikes || 0,
-            total: data.totalVotes || 0
-          });
+          // Update cache with real-time data (if caching enabled)
+          if (featureFlags.enableVotingCache) {
+            votingCache.setVoteCount(songId, voteCount);
+          }
+          
+          // Call the callback with updated data
+          if (typeof callback === 'function') {
+            callback(voteCount);
+          }
         } catch (error) {
           const votingError = classifyError(error, 'Vote Update Processing');
           console.error(formatErrorForLogging(votingError));
           
           // Don't throw here as it would break the subscription
-          // Instead, call callback with current known state or zeros
-          callback({
-            likes: 0,
-            dislikes: 0,
-            total: 0
-          });
+          if (typeof callback === 'function') {
+            callback({ likes: 0, dislikes: 0, total: 0 });
+          }
         }
       },
       (error) => {
@@ -372,27 +526,23 @@ export class FirebaseVotingService implements VotingService {
         console.error(formatErrorForLogging(votingError));
         
         // Call callback with zeros on error to maintain UI consistency
-        callback({
-          likes: 0,
-          dislikes: 0,
-          total: 0
-        });
+        if (typeof callback === 'function') {
+          callback({ likes: 0, dislikes: 0, total: 0 });
+        }
       }
     );
   }
-
-
 }
 
 /**
  * Safe voting service that handles Firebase not being configured with enhanced error handling
  */
 class SafeVotingService implements VotingService {
-  private firebaseService: FirebaseVotingService | null = null;
+  private firebaseService: UnifiedFirebaseVotingService | null = null;
 
-  private getService(): FirebaseVotingService {
+  private getService(): UnifiedFirebaseVotingService {
     if (!this.firebaseService) {
-      this.firebaseService = new FirebaseVotingService();
+      this.firebaseService = new UnifiedFirebaseVotingService();
     }
     return this.firebaseService;
   }
@@ -499,5 +649,11 @@ class SafeVotingService implements VotingService {
   }
 }
 
-// Export a singleton instance
+// Export the safe service as the default
 export const votingService = new SafeVotingService();
+
+// Export the unified service for direct use if needed
+// UnifiedFirebaseVotingService is already exported as a class above
+
+// Maintain backward compatibility with existing exports
+export default votingService;

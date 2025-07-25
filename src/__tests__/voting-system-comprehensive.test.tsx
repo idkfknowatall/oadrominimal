@@ -13,10 +13,10 @@ import { VoteButton } from '@/components/ui/vote-button';
 import { VotingInterface } from '@/components/ui/voting-interface';
 import { SongVoteDisplay } from '@/components/ui/song-vote-display';
 import { useVoting } from '@/hooks/use-voting';
-import { useFirebaseVotes } from '@/hooks/use-firebase-votes';
+// useFirebaseVotes hook removed as it was redundant with useVoting
 
 // Import services and utilities
-import { OptimizedFirebaseVotingService } from '@/lib/voting-service-optimized';
+import { UnifiedFirebaseVotingService } from '@/lib/voting-service';
 import { 
   votingCache, 
   voteDebouncer, 
