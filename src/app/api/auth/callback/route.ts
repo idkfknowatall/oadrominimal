@@ -123,6 +123,9 @@ export async function GET(request: NextRequest) {
     const error = searchParams.get('error');
     const state = searchParams.get('state');
     
+    // Always use the main domain for redirects
+    const baseUrl = 'https://oadro.com';
+    
     // Retrieve stored values from cookies
     const storedState = request.cookies.get('discord_oauth_state')?.value;
     const codeVerifier = request.cookies.get('discord_code_verifier')?.value;
@@ -135,13 +138,13 @@ export async function GET(request: NextRequest) {
         hasStoredState: !!storedState,
         statesMatch: state === storedState,
       });
-      return NextResponse.redirect(new URL('/?error=invalid_state', request.url));
+      return NextResponse.redirect(new URL('/?error=invalid_state', baseUrl));
     }
 
     // Validate PKCE code verifier
     if (!codeVerifier || !(await validatePKCE(codeVerifier))) {
       console.error('[Discord OAuth] Invalid PKCE code verifier');
-      return NextResponse.redirect(new URL('/?error=invalid_pkce', request.url));
+      return NextResponse.redirect(new URL('/?error=invalid_pkce', baseUrl));
     }
 
     // Handle OAuth errors from Discord
@@ -155,20 +158,20 @@ export async function GET(request: NextRequest) {
       };
       
       return NextResponse.redirect(
-        new URL(`/?error=discord_error&message=${encodeURIComponent(errorMap[error] || error)}`, request.url)
+        new URL(`/?error=discord_error&message=${encodeURIComponent(errorMap[error] || error)}`, baseUrl)
       );
     }
 
     // Validate authorization code
     if (!code) {
       console.error('[Discord OAuth] Missing authorization code');
-      return NextResponse.redirect(new URL('/?error=missing_code', request.url));
+      return NextResponse.redirect(new URL('/?error=missing_code', baseUrl));
     }
 
     // Exchange code for token with PKCE validation
     const tokenResult = await exchangeCodeForToken(code, codeVerifier);
     if (!tokenResult.success) {
-      return NextResponse.redirect(new URL('/?error=token_exchange_failed', request.url));
+      return NextResponse.redirect(new URL('/?error=token_exchange_failed', baseUrl));
     }
 
     const { access_token, token_type } = tokenResult.data;
@@ -176,14 +179,14 @@ export async function GET(request: NextRequest) {
     // Fetch user data from Discord
     const userResult = await fetchDiscordUser(access_token, token_type);
     if (!userResult.success) {
-      return NextResponse.redirect(new URL('/?error=user_fetch_failed', request.url));
+      return NextResponse.redirect(new URL('/?error=user_fetch_failed', baseUrl));
     }
 
     // Validate and sanitize user data
     const userValidation = validateDiscordUser(userResult.user);
     if (!userValidation.isValid) {
       console.error('[Discord OAuth] User data validation failed:', userValidation.errors);
-      return NextResponse.redirect(new URL('/?error=invalid_user_data', request.url));
+      return NextResponse.redirect(new URL('/?error=invalid_user_data', baseUrl));
     }
 
     const validatedUser = userValidation.user!;
@@ -195,7 +198,7 @@ export async function GET(request: NextRequest) {
     });
 
     // Create response with user session
-    const response = NextResponse.redirect(new URL('/?auth=success', request.url));
+    const response = NextResponse.redirect(new URL('/?auth=success', baseUrl));
     
     // Set secure session cookies
     const cookieOptions = {
@@ -225,8 +228,11 @@ export async function GET(request: NextRequest) {
   } catch (error) {
     console.error('[Discord OAuth] Unexpected error during callback:', error);
     
+    // Always use the main domain for redirects
+    const baseUrl = 'https://oadro.com';
+    
     // Clear any OAuth cookies on error
-    const response = NextResponse.redirect(new URL('/?error=unexpected_error', request.url));
+    const response = NextResponse.redirect(new URL('/?error=unexpected_error', baseUrl));
     response.cookies.delete('discord_oauth_state');
     response.cookies.delete('discord_code_verifier');
     response.cookies.delete('discord_oauth_nonce');
