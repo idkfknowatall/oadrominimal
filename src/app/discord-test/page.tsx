@@ -221,7 +221,7 @@ export default function DiscordTestPage() {
               </div>
               <div className="flex justify-between">
                 <span className="font-medium">Redirect URI:</span>
-                <span className="font-mono">http://localhost:3000/api/auth/discord/callback</span>
+                <span className="font-mono">http://localhost:3000/api/auth/callback</span>
               </div>
               <div className="flex justify-between">
                 <span className="font-medium">Scopes:</span>
@@ -246,7 +246,7 @@ export default function DiscordTestPage() {
                   <li>Go to <a href="https://discord.com/developers/applications" target="_blank" rel="noopener noreferrer" className="underline">Discord Developer Portal</a></li>
                   <li>Select your application (Client ID: 1378094738690805801)</li>
                   <li>Go to OAuth2 → General</li>
-                  <li>Add redirect URI: <code className="bg-blue-100 dark:bg-blue-800 px-1 rounded">http://localhost:3000/api/auth/discord/callback</code></li>
+                  <li>Add redirect URI: <code className="bg-blue-100 dark:bg-blue-800 px-1 rounded">http://localhost:3000/api/auth/callback</code></li>
                   <li>Copy the Client Secret and add it to your .env.local file</li>
                 </ol>
               </div>

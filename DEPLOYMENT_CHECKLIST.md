@@ -47,7 +47,7 @@ Ensure all required environment variables are set:
 # Discord OAuth
 DISCORD_CLIENT_ID=your_discord_client_id
 DISCORD_CLIENT_SECRET=your_discord_client_secret
-DISCORD_REDIRECT_URI=https://yourdomain.com/api/auth/discord/callback
+DISCORD_REDIRECT_URI=https://yourdomain.com/api/auth/callback
 
 # NextAuth
 NEXTAUTH_SECRET=your_secure_random_string
