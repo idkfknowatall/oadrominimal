@@ -105,10 +105,11 @@ export async function GET(request: NextRequest) {
     // Store PKCE and state parameters in secure cookies
     const cookieOptions = {
       httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
+      secure: true, // Always use secure cookies for production
       sameSite: 'lax' as const,
       maxAge: 60 * 10, // 10 minutes
       path: '/',
+      domain: '.oadro.com', // Set domain to work across subdomains
     };
     
     response.cookies.set('discord_oauth_state', state, cookieOptions);

@@ -200,13 +200,14 @@ export async function GET(request: NextRequest) {
     // Create response with user session
     const response = NextResponse.redirect(new URL('/?auth=success', baseUrl));
     
-    // Set secure session cookies
+    // Set secure session cookies with proper domain
     const cookieOptions = {
       httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
+      secure: true, // Always use secure cookies for production
       sameSite: 'lax' as const,
       maxAge: 60 * 60 * 24 * 7, // 7 days
       path: '/',
+      domain: '.oadro.com', // Set domain to work across subdomains
     };
     
     response.cookies.set('discord_user_id', validatedUser.id, cookieOptions);

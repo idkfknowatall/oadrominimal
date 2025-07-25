@@ -24,9 +24,10 @@ const DISCORD_COOKIES = [
 function clearDiscordCookies(response: NextResponse): void {
   const cookieOptions = {
     httpOnly: true,
-    secure: process.env.NODE_ENV === 'production',
+    secure: true, // Always use secure cookies for production
     sameSite: 'lax' as const,
     path: '/',
+    domain: '.oadro.com', // Set domain to work across subdomains
     maxAge: 0, // Expire immediately
   };
 
@@ -93,7 +94,7 @@ export async function GET(request: NextRequest) {
     logLogoutEvent(request, 'GET');
     
     // Support GET for direct logout links with redirect
-    const response = NextResponse.redirect(new URL('/?logout=success', request.url));
+    const response = NextResponse.redirect(new URL('/?logout=success', 'https://oadro.com'));
     
     // Clear all Discord-related cookies
     clearDiscordCookies(response);
@@ -108,7 +109,7 @@ export async function GET(request: NextRequest) {
     console.error('[Discord OAuth] Logout error (GET):', error);
     
     // Still try to clear cookies and redirect even on error
-    const response = NextResponse.redirect(new URL('/?error=logout_failed', request.url));
+    const response = NextResponse.redirect(new URL('/?error=logout_failed', 'https://oadro.com'));
     clearDiscordCookies(response);
     return response;
   }
