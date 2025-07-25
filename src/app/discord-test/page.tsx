@@ -14,15 +14,23 @@ interface UserData {
   avatarUrl: string;
 }
 
+interface ConfigData {
+  clientId: string;
+  redirectUri: string;
+  scopes: string;
+}
+
 export default function DiscordTestPage() {
   const [user, setUser] = useState<UserData | null>(null);
+  const [config, setConfig] = useState<ConfigData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [authStatus, setAuthStatus] = useState<'checking' | 'authenticated' | 'not_authenticated'>('checking');
 
-  // Check authentication status on page load
+  // Check authentication status and load config on page load
   useEffect(() => {
     checkAuthStatus();
+    loadConfig();
     
     // Check for auth success/error in URL
     const urlParams = new URLSearchParams(window.location.search);
@@ -37,6 +45,23 @@ export default function DiscordTestPage() {
       setError(`Authentication failed: ${errorResult}`);
     }
   }, []);
+
+  const loadConfig = async () => {
+    try {
+      // Get configuration from environment variables
+      const baseUrl = window.location.origin;
+      const clientId = process.env.NEXT_PUBLIC_DISCORD_CLIENT_ID || 'Not configured';
+      const redirectUri = `${baseUrl}/api/auth/callback`;
+      
+      setConfig({
+        clientId,
+        redirectUri,
+        scopes: 'identify'
+      });
+    } catch (err) {
+      console.error('Failed to load config:', err);
+    }
+  };
 
   const checkAuthStatus = async () => {
     try {
@@ -217,15 +242,15 @@ export default function DiscordTestPage() {
             <div className="space-y-2 text-sm">
               <div className="flex justify-between">
                 <span className="font-medium">Client ID:</span>
-                <span className="font-mono">1378094738690805801</span>
+                <span className="font-mono">{config?.clientId || 'Loading...'}</span>
               </div>
               <div className="flex justify-between">
                 <span className="font-medium">Redirect URI:</span>
-                <span className="font-mono">http://localhost:3000/api/auth/callback</span>
+                <span className="font-mono">{config?.redirectUri || 'Loading...'}</span>
               </div>
               <div className="flex justify-between">
                 <span className="font-medium">Scopes:</span>
-                <span className="font-mono">identify</span>
+                <span className="font-mono">{config?.scopes || 'Loading...'}</span>
               </div>
             </div>
           </CardContent>
@@ -244,9 +269,9 @@ export default function DiscordTestPage() {
                 </p>
                 <ol className="list-decimal list-inside space-y-1 text-blue-700 dark:text-blue-300">
                   <li>Go to <a href="https://discord.com/developers/applications" target="_blank" rel="noopener noreferrer" className="underline">Discord Developer Portal</a></li>
-                  <li>Select your application (Client ID: 1378094738690805801)</li>
+                  <li>Select your application (Client ID: {config?.clientId || 'Loading...'})</li>
                   <li>Go to OAuth2 → General</li>
-                  <li>Add redirect URI: <code className="bg-blue-100 dark:bg-blue-800 px-1 rounded">http://localhost:3000/api/auth/callback</code></li>
+                  <li>Add redirect URI: <code className="bg-blue-100 dark:bg-blue-800 px-1 rounded">{config?.redirectUri || 'Loading...'}</code></li>
                   <li>Copy the Client Secret and add it to your .env.local file</li>
                 </ol>
               </div>
