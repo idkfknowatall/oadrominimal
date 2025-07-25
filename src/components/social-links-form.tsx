@@ -52,14 +52,6 @@ export function SocialLinksForm({
     }
   };
 
-  // This function is not used, but it is kept for future reference
-  // in case we want to filter out empty values before submission.
-  // const getCleanLinks = () => {
-  //   return Object.fromEntries(
-  //     Object.entries(links).filter(([, value]) => value !== '' && value !== null)
-  //   );
-  // };
-
   const handleChange = (platform: string, value: string) => {
     setLinks((prev) => ({
       ...prev,
