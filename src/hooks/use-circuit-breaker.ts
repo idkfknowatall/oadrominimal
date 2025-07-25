@@ -118,7 +118,7 @@ export class CircuitBreaker {
     this.state = 'CLOSED';
     this.failures = 0;
     this.successes = 0;
-    this.nextAttempt = undefined;
+    delete this.nextAttempt;
     this.onStateChange('CLOSED');
   }
 
@@ -150,15 +150,24 @@ export class CircuitBreaker {
    * Gets current circuit breaker statistics
    */
   getStats(): CircuitBreakerStats {
-    return {
+    const stats: CircuitBreakerStats = {
       state: this.state,
       failures: this.failures,
       successes: this.successes,
       totalRequests: this.totalRequests,
-      lastFailureTime: this.lastFailureTime,
-      lastSuccessTime: this.lastSuccessTime,
-      nextAttempt: this.nextAttempt,
     };
+
+    if (this.lastFailureTime !== undefined) {
+      stats.lastFailureTime = this.lastFailureTime;
+    }
+    if (this.lastSuccessTime !== undefined) {
+      stats.lastSuccessTime = this.lastSuccessTime;
+    }
+    if (this.nextAttempt !== undefined) {
+      stats.nextAttempt = this.nextAttempt;
+    }
+
+    return stats;
   }
 
   /**

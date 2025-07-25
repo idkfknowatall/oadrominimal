@@ -218,7 +218,7 @@ export function useAdvancedVisualizer(
     ctx.beginPath();
     for (let i = 0; i < smoothedData.length; i++) {
       const x = (i / smoothedData.length) * width;
-      const y = centerY + (smoothedData[i] - 0.5) * centerY * (amplitude || 1);
+      const y = centerY + ((smoothedData[i] ?? 0) - 0.5) * centerY * (amplitude || 1);
       
       if (i === 0) {
         ctx.moveTo(x, y);
@@ -246,16 +246,16 @@ export function useAdvancedVisualizer(
     ctx.clearRect(0, 0, width, height);
 
     for (let i = 0; i < (barCount ?? 64); i++) {
-      const angle = (i / barCount) * Math.PI * 2;
+      const angle = (i / (barCount ?? 64)) * Math.PI * 2;
       const dataIndex = Math.floor((i / (barCount ?? 64)) * smoothedData.length);
-      const barLength = smoothedData[dataIndex] * maxBarLength;
+      const barLength = (smoothedData[dataIndex] ?? 0) * maxBarLength;
       
       const startX = centerX + Math.cos(angle) * radius;
       const startY = centerY + Math.sin(angle) * radius;
       const endX = centerX + Math.cos(angle) * (radius + barLength);
       const endY = centerY + Math.sin(angle) * (radius + barLength);
       
-      ctx.strokeStyle = getColor(i, barCount, smoothedData[dataIndex]);
+      ctx.strokeStyle = getColor(i, barCount ?? 64, smoothedData[dataIndex] ?? 0);
       ctx.lineWidth = 3;
       ctx.beginPath();
       ctx.moveTo(startX, startY);
@@ -301,6 +301,7 @@ export function useAdvancedVisualizer(
     // Update and draw particles
     for (let i = particles.length - 1; i >= 0; i--) {
       const particle = particles[i];
+      if (!particle) continue;
       
       // Update particle
       particle.x += particle.vx;
@@ -345,14 +346,14 @@ export function useAdvancedVisualizer(
         const pixelIndex = (y * width + x) * 4;
         const heightRatio = 1 - (y / height);
         
-        if (heightRatio < intensity) {
-          const color = getColor(freqIndex, smoothedData.length, intensity);
+        if (heightRatio < (intensity ?? 0)) {
+          const color = getColor(freqIndex, smoothedData.length, intensity ?? 0);
           const rgb = color.match(/\d+/g);
           
           if (rgb) {
-            data[pixelIndex] = parseInt(rgb[0]);     // R
-            data[pixelIndex + 1] = parseInt(rgb[1]); // G
-            data[pixelIndex + 2] = parseInt(rgb[2]); // B
+            data[pixelIndex] = parseInt(rgb[0] ?? '0');     // R
+            data[pixelIndex + 1] = parseInt(rgb[1] ?? '0'); // G
+            data[pixelIndex + 2] = parseInt(rgb[2] ?? '0'); // B
             data[pixelIndex + 3] = 255;              // A
           }
         } else {
@@ -373,7 +374,7 @@ export function useAdvancedVisualizer(
     if (!ctx) return;
 
     // Performance monitoring
-    const frameStart = performance.now();
+    const frameStart = window.performance.now();
     
     // Update canvas size if responsive
     if (visualizerConfig.responsive) {
@@ -414,7 +415,7 @@ export function useAdvancedVisualizer(
     // FPS calculation
     if (visualizerConfig.showFPS) {
       frameCount.current++;
-      const now = performance.now();
+      const now = window.performance.now();
       
       if (now - fpsUpdateTime.current >= 1000) {
         setFps(Math.round((frameCount.current * 1000) / (now - fpsUpdateTime.current)));
@@ -429,9 +430,12 @@ export function useAdvancedVisualizer(
     }
 
     // Performance monitoring
-    const frameTime = performance.now() - frameStart;
+    const frameTime = window.performance.now() - frameStart;
     if (featureFlags.enablePerformanceMonitoring) {
-      performance.reportMetric('visualizer_frame_time', frameTime);
+      performance.updateAudioMetrics({
+        bufferHealth: 100 - (frameTime / 16.67) * 100, // Assuming 60fps target
+        latency: frameTime
+      });
     }
 
     animationFrameRef.current = requestAnimationFrame(render);

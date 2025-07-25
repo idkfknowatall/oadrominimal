@@ -249,6 +249,51 @@ export function useEnhancedAudioPlayer(options: AudioPlayerOptions) {
   }, []);
 
   /**
+   * Updates buffer health metrics
+   */
+  const updateBufferMetrics = useCallback(() => {
+    if (!audioRef.current) return;
+
+    try {
+      const audio = audioRef.current;
+      const buffered = audio.buffered;
+      const currentTime = audio.currentTime;
+      
+      let bufferHealth = 100;
+      let bufferedAmount = 0;
+
+      if (buffered.length > 0) {
+        // Find the buffer range that contains current time
+        for (let i = 0; i < buffered.length; i++) {
+          if (currentTime >= buffered.start(i) && currentTime <= buffered.end(i)) {
+            bufferedAmount = buffered.end(i) - currentTime;
+            break;
+          }
+        }
+        
+        // Calculate buffer health (0-100%)
+        bufferHealth = Math.min(100, (bufferedAmount / 10) * 100); // 10 seconds = 100%
+      }
+
+      setMetrics(prev => ({
+        ...prev,
+        bufferHealth,
+      }));
+
+      // Update performance monitoring
+      if (enableMetrics) {
+        performanceMonitor.updateAudioMetrics({
+          bufferHealth,
+          dropouts: metrics.dropouts,
+          latency: metrics.latency,
+        });
+      }
+    } catch (error) {
+      console.error('[Audio Player] Error updating buffer metrics:', error);
+    }
+  }, [enableMetrics, performanceMonitor, metrics.dropouts, metrics.latency]);
+
+  /**
    * Initializes HLS with comprehensive error handling
    */
   const initializeHLS = useCallback(async () => {
@@ -312,51 +357,6 @@ export function useEnhancedAudioPlayer(options: AudioPlayerOptions) {
       setState(prev => ({ ...prev, error: 'Failed to initialize audio stream' }));
     }
   }, [streamUrl, autoPlay, hlsConfig, updateBufferMetrics]);
-
-  /**
-   * Updates buffer health metrics
-   */
-  const updateBufferMetrics = useCallback(() => {
-    if (!audioRef.current) return;
-
-    try {
-      const audio = audioRef.current;
-      const buffered = audio.buffered;
-      const currentTime = audio.currentTime;
-      
-      let bufferHealth = 100;
-      let bufferedAmount = 0;
-
-      if (buffered.length > 0) {
-        // Find the buffer range that contains current time
-        for (let i = 0; i < buffered.length; i++) {
-          if (currentTime >= buffered.start(i) && currentTime <= buffered.end(i)) {
-            bufferedAmount = buffered.end(i) - currentTime;
-            break;
-          }
-        }
-        
-        // Calculate buffer health (0-100%)
-        bufferHealth = Math.min(100, (bufferedAmount / 10) * 100); // 10 seconds = 100%
-      }
-
-      setMetrics(prev => ({
-        ...prev,
-        bufferHealth,
-      }));
-
-      // Update performance monitoring
-      if (enableMetrics) {
-        performanceMonitor.updateAudioMetrics({
-          bufferHealth,
-          dropouts: metrics.dropouts,
-          latency: metrics.latency,
-        });
-      }
-    } catch (error) {
-      console.error('[Audio Player] Error updating buffer metrics:', error);
-    }
-  }, [enableMetrics, performanceMonitor, metrics.dropouts, metrics.latency]);
 
   /**
    * Audio event handlers

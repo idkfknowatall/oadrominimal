@@ -6,7 +6,8 @@ import type { NowPlaying, StreamStatus } from './types';
 
 export type PubSubEvent =
   | { type: 'now_playing'; data: NowPlaying }
-  | { type: 'stream_status'; data: StreamStatus };
+  | { type: 'stream_status'; data: StreamStatus }
+  | { type: 'connection_failed'; data: { reason: string; metrics: any } };
 
 type EventHandler = (event: PubSubEvent) => void;
 

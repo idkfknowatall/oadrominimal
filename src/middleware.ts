@@ -89,7 +89,8 @@ function getClientIdentifier(request: NextRequest): string {
   }
   
   if (forwarded) {
-    return forwarded.split(',')[0].trim();
+    const firstIp = forwarded.split(',')[0];
+    return firstIp ? firstIp.trim() : forwarded;
   }
   
   if (realIp) {

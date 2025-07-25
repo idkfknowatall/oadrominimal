@@ -150,13 +150,18 @@ export class EnhancedRateLimiter {
       const data = await this.store.increment(key, finalConfig.windowMs);
       const allowed = data.count <= finalConfig.limit;
       
-      return {
+      const result: RateLimitResult = {
         allowed,
         limit: finalConfig.limit,
         remaining: Math.max(0, finalConfig.limit - data.count),
-        resetTime: new Date(data.resetTime),
-        retryAfter: allowed ? undefined : Math.ceil((data.resetTime - Date.now()) / 1000)
+        resetTime: new Date(data.resetTime)
       };
+      
+      if (!allowed) {
+        result.retryAfter = Math.ceil((data.resetTime - Date.now()) / 1000);
+      }
+      
+      return result;
     } catch (error) {
       console.error('Rate limit check failed:', error);
       // Fail open - allow request if rate limiting fails

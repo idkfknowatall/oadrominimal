@@ -105,10 +105,17 @@ export function extractPlatformLinks(song: RequestableSong): Array<{platform: st
 
 export function getCreatorInfo(song: RequestableSong): { hasCreator: boolean, creatorId?: string } {
   const creatorId = song.song.custom_fields.creator_discord_id;
-  return {
-    hasCreator: Boolean(creatorId && creatorId.trim()),
-    creatorId: creatorId || undefined
+  const hasCreator = Boolean(creatorId && creatorId.trim());
+  
+  const result: { hasCreator: boolean, creatorId?: string } = {
+    hasCreator
   };
+  
+  if (hasCreator && creatorId) {
+    result.creatorId = creatorId;
+  }
+  
+  return result;
 }
 
 export function getSongDisplayText(song: RequestableSong): string {

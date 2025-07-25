@@ -325,20 +325,6 @@ export function I18nProvider({ children }: { children: ReactNode }) {
   const [translations, setTranslations] = useState<Partial<TranslationKeys>>(defaultTranslations);
   const [isLoading, setIsLoading] = useState(false);
 
-  useEffect(() => {
-    const savedLocale = localStorage.getItem('oadro_locale') as SupportedLocale;
-    const initialLocale = savedLocale || detectBrowserLocale();
-    
-    if (initialLocale !== 'en') {
-      setLocale(initialLocale);
-    }
-  }, [setLocale]);
-
-  const t: TranslationFunction = useCallback((key: keyof TranslationKeys, params?: Record<string, string | number>) => {
-    const translation = translations[key] || defaultTranslations[key] || key;
-    return interpolateParams(translation, params);
-  }, [translations]);
-
   const setLocale = useCallback(async (newLocale: SupportedLocale) => {
     if (newLocale === locale) return;
     
@@ -359,6 +345,20 @@ export function I18nProvider({ children }: { children: ReactNode }) {
       setIsLoading(false);
     }
   }, [locale]);
+
+  useEffect(() => {
+    const savedLocale = localStorage.getItem('oadro_locale') as SupportedLocale;
+    const initialLocale = savedLocale || detectBrowserLocale();
+    
+    if (initialLocale !== 'en') {
+      setLocale(initialLocale);
+    }
+  }, [setLocale]);
+
+  const t: TranslationFunction = useCallback((key: keyof TranslationKeys, params?: Record<string, string | number>) => {
+    const translation = translations[key] || defaultTranslations[key] || key;
+    return interpolateParams(translation, params);
+  }, [translations]);
 
   const formatDate = useCallback((date: Date, options?: Intl.DateTimeFormatOptions) => {
     return new Intl.DateTimeFormat(locale, options).format(date);
@@ -431,4 +431,4 @@ export function useI18n() {
 export function useTranslation() {
   const { t } = useI18n();
   return { t };
-} 
+}

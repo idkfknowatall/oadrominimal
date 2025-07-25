@@ -131,7 +131,7 @@ export class CircuitBreaker {
   }
 
   private shouldAttemptReset(): boolean {
-    return (
+    return !!(
       this.lastFailureTime &&
       Date.now() - this.lastFailureTime.getTime() >= this.config.resetTimeout
     );
@@ -166,7 +166,7 @@ export class CircuitBreaker {
 
       if (this.failureCount >= this.config.failureThreshold) {
         this.state = CircuitState.OPEN;
-        logger.error(`Circuit breaker ${this.name} opened due to repeated failures`, {
+        logger.error(`Circuit breaker ${this.name} opened due to repeated failures`, undefined, {
           failureCount: this.failureCount,
           threshold: this.config.failureThreshold
         });
@@ -306,7 +306,7 @@ export class ErrorReporter {
     }
 
     // Log the error
-    logger.error('Error reported', error.toJSON());
+    logger.error('Error reported', undefined, error.toJSON());
 
     // In production, you would send to external monitoring service
     if (process.env.NODE_ENV === 'production') {
@@ -320,7 +320,7 @@ export class ErrorReporter {
       // Placeholder for external monitoring service integration
       // await externalService.reportError(error.toJSON());
     } catch (reportingError) {
-      logger.error('Failed to report error to monitoring service', {
+      logger.error('Failed to report error to monitoring service', undefined, {
         originalError: error.toJSON(),
         reportingError: reportingError instanceof Error ? reportingError.message : reportingError
       });

@@ -351,11 +351,18 @@ export function usePerformanceMonitoring(
     setMetrics(prev => {
       const newMetrics = {
         ...prev,
-        audioBufferHealth: audioMetrics.bufferHealth,
-        audioDropouts: audioMetrics.dropouts,
-        audioLatency: audioMetrics.latency,
         lastUpdateTime: Date.now(),
       };
+
+      if (audioMetrics.bufferHealth !== undefined) {
+        newMetrics.audioBufferHealth = audioMetrics.bufferHealth;
+      }
+      if (audioMetrics.dropouts !== undefined) {
+        newMetrics.audioDropouts = audioMetrics.dropouts;
+      }
+      if (audioMetrics.latency !== undefined) {
+        newMetrics.audioLatency = audioMetrics.latency;
+      }
 
       checkThresholds(newMetrics);
       return newMetrics;

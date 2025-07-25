@@ -69,8 +69,13 @@ function createEnvConfig(): EnvConfig {
         'NEXT_PUBLIC_AZURACAST_STATION_NAME'
       ),
       NODE_ENV: validateNodeEnv(process.env.NODE_ENV),
-      PORT: validatePort(process.env.PORT)
     };
+
+    // Handle optional PORT property for exactOptionalPropertyTypes
+    const portValue = validatePort(process.env.PORT);
+    if (portValue !== undefined) {
+      config.PORT = portValue;
+    }
 
     // Log configuration in development
     if (config.NODE_ENV === 'development') {

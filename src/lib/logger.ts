@@ -23,13 +23,18 @@ class Logger {
   }
 
   private formatMessage(level: LogLevel, message: string, metadata?: Record<string, any>): LogEntry {
-    return {
+    const entry: LogEntry = {
       level,
       message,
       timestamp: new Date().toISOString(),
-      context: this.context,
-      metadata
+      context: this.context
     };
+    
+    if (metadata !== undefined) {
+      entry.metadata = metadata;
+    }
+    
+    return entry;
   }
 
   private shouldLog(level: LogLevel): boolean {
@@ -75,7 +80,10 @@ class Logger {
   }
 
   error(message: string, error?: Error, metadata?: Record<string, any>): void {
-    const entry = { ...this.formatMessage('error', message, metadata), error };
+    const entry = this.formatMessage('error', message, metadata);
+    if (error !== undefined) {
+      entry.error = error;
+    }
     console.error(`[ERROR][${this.context}] ${message}`, { error, ...metadata });
     this.sendToMonitoring(entry);
   }
