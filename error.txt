@@ -1,25 +1,182 @@
-
- ⚠ Invalid next.config.ts options detected: 
- ⚠     Unrecognized key(s) in object: 'swcMinify'
- ⚠ See more info here: https://nextjs.org/docs/messages/invalid-next-config
- ⚠ The config property `experimental.turbo` is deprecated. Move this setting to `config.turbopack` as Turbopack is now stable.
-   ▲ Next.js 15.3.3
-   - Environments: .env.local, .env.production, .env
-
-   Creating an optimized production build ...
- ✓ Compiled successfully in 13.0s
-   Linting and checking validity of types  .. ⨯ ESLint must be installed in order to run during builds: npm install --save-dev eslint
-   Linting and checking validity of types  ...Failed to compile.
-
-./src/app/api/auth/callback/route.ts:17:3
-Type error: Type 'string | boolean' is not assignable to type 'boolean'.
-  Type 'string' is not assignable to type 'boolean'.
-
-  15 |   // and compare it with the stored challenge
-  16 |   // For now, we'll do basic validation
-> 17 |   return codeVerifier && codeVerifier.length >= 43 && codeVerifier.length <= 128;    
-     |   ^
-  18 | }
-  19 |
-  20 | /**
-Next.js build worker exited with code: 1 and signal: null
+layout-d0d1fb7708340b76.js:1 [Performance] Initializing app performance optimizations...
+layout-d0d1fb7708340b76.js:1 [SW] Registering service worker...
+layout-d0d1fb7708340b76.js:1 [SW] Service worker registered successfully
+sw.js:256 [SW] Cache warmed up
+layout-d0d1fb7708340b76.js:1 [Performance] Initializing app performance optimizations...
+layout-d0d1fb7708340b76.js:1 [SW] Registering service worker...
+layout-d0d1fb7708340b76.js:1 [SW] Service worker registered successfully
+sw.js:256 [SW] Cache warmed up
+layout-d0d1fb7708340b76.js:1 [API Cache] Cache warmed successfully
+oadro.com/:1 Access to fetch at 'https://radio.oadro.com/api/station/oadro' from origin 'https://oadro.com' has been blocked by CORS policy: No 'Access-Control-Allow-Origin' header is present on the requested resource. If an opaque response serves your needs, set the request's mode to 'no-cors' to fetch the resource with CORS disabled.
+layout-d0d1fb7708340b76.js:1 
+            
+            
+           GET https://radio.oadro.com/api/station/oadro net::ERR_FAILED 429 (Too Many Requests)
+V @ layout-d0d1fb7708340b76.js:1
+Z @ layout-d0d1fb7708340b76.js:1
+await in Z
+(anonymous) @ layout-d0d1fb7708340b76.js:1
+await in (anonymous)
+(anonymous) @ layout-d0d1fb7708340b76.js:1
+oq @ framework-acd1adbdf2a43c5b.js:1
+e @ framework-acd1adbdf2a43c5b.js:1
+e @ framework-acd1adbdf2a43c5b.js:1
+e @ framework-acd1adbdf2a43c5b.js:1
+e @ framework-acd1adbdf2a43c5b.js:1
+e @ framework-acd1adbdf2a43c5b.js:1
+e @ framework-acd1adbdf2a43c5b.js:1
+um @ framework-acd1adbdf2a43c5b.js:1
+uh @ framework-acd1adbdf2a43c5b.js:1
+um @ framework-acd1adbdf2a43c5b.js:1
+uh @ framework-acd1adbdf2a43c5b.js:1
+um @ framework-acd1adbdf2a43c5b.js:1
+uh @ framework-acd1adbdf2a43c5b.js:1
+um @ framework-acd1adbdf2a43c5b.js:1
+uh @ framework-acd1adbdf2a43c5b.js:1
+um @ framework-acd1adbdf2a43c5b.js:1
+uh @ framework-acd1adbdf2a43c5b.js:1
+um @ framework-acd1adbdf2a43c5b.js:1
+uh @ framework-acd1adbdf2a43c5b.js:1
+um @ framework-acd1adbdf2a43c5b.js:1
+uh @ framework-acd1adbdf2a43c5b.js:1
+um @ framework-acd1adbdf2a43c5b.js:1
+uh @ framework-acd1adbdf2a43c5b.js:1
+um @ framework-acd1adbdf2a43c5b.js:1
+uh @ framework-acd1adbdf2a43c5b.js:1
+um @ framework-acd1adbdf2a43c5b.js:1
+uh @ framework-acd1adbdf2a43c5b.js:1
+um @ framework-acd1adbdf2a43c5b.js:1
+uh @ framework-acd1adbdf2a43c5b.js:1
+um @ framework-acd1adbdf2a43c5b.js:1
+uh @ framework-acd1adbdf2a43c5b.js:1
+um @ framework-acd1adbdf2a43c5b.js:1
+uh @ framework-acd1adbdf2a43c5b.js:1
+um @ framework-acd1adbdf2a43c5b.js:1
+uh @ framework-acd1adbdf2a43c5b.js:1
+um @ framework-acd1adbdf2a43c5b.js:1
+uh @ framework-acd1adbdf2a43c5b.js:1
+um @ framework-acd1adbdf2a43c5b.js:1
+uh @ framework-acd1adbdf2a43c5b.js:1
+um @ framework-acd1adbdf2a43c5b.js:1
+uh @ framework-acd1adbdf2a43c5b.js:1
+um @ framework-acd1adbdf2a43c5b.js:1
+uh @ framework-acd1adbdf2a43c5b.js:1
+um @ framework-acd1adbdf2a43c5b.js:1
+uh @ framework-acd1adbdf2a43c5b.js:1
+um @ framework-acd1adbdf2a43c5b.js:1
+uh @ framework-acd1adbdf2a43c5b.js:1
+um @ framework-acd1adbdf2a43c5b.js:1
+uh @ framework-acd1adbdf2a43c5b.js:1
+um @ framework-acd1adbdf2a43c5b.js:1
+uh @ framework-acd1adbdf2a43c5b.js:1
+um @ framework-acd1adbdf2a43c5b.js:1
+uh @ framework-acd1adbdf2a43c5b.js:1
+um @ framework-acd1adbdf2a43c5b.js:1
+uh @ framework-acd1adbdf2a43c5b.js:1
+um @ framework-acd1adbdf2a43c5b.js:1
+uh @ framework-acd1adbdf2a43c5b.js:1
+um @ framework-acd1adbdf2a43c5b.js:1
+uh @ framework-acd1adbdf2a43c5b.js:1
+um @ framework-acd1adbdf2a43c5b.js:1
+uh @ framework-acd1adbdf2a43c5b.js:1
+um @ framework-acd1adbdf2a43c5b.js:1
+uh @ framework-acd1adbdf2a43c5b.js:1
+um @ framework-acd1adbdf2a43c5b.js:1
+uh @ framework-acd1adbdf2a43c5b.js:1
+um @ framework-acd1adbdf2a43c5b.js:1
+iS @ framework-acd1adbdf2a43c5b.js:1
+iE @ framework-acd1adbdf2a43c5b.js:1
+iB @ framework-acd1adbdf2a43c5b.js:1
+iD @ framework-acd1adbdf2a43c5b.js:1
+iv @ framework-acd1adbdf2a43c5b.js:1
+ig @ framework-acd1adbdf2a43c5b.js:1
+u9 @ framework-acd1adbdf2a43c5b.js:1
+u6 @ framework-acd1adbdf2a43c5b.js:1
+iH @ framework-acd1adbdf2a43c5b.js:1
+T @ framework-acd1adbdf2a43c5b.js:1
+layout-d0d1fb7708340b76.js:1 [API Cache] Cache warming failed: TypeError: Failed to fetch
+    at V (layout-d0d1fb7708340b76.js:1:18897)
+    at Z (layout-d0d1fb7708340b76.js:1:20593)
+    at async layout-d0d1fb7708340b76.js:1:33388
+Z @ layout-d0d1fb7708340b76.js:1
+await in Z
+(anonymous) @ layout-d0d1fb7708340b76.js:1
+await in (anonymous)
+(anonymous) @ layout-d0d1fb7708340b76.js:1
+oq @ framework-acd1adbdf2a43c5b.js:1
+e @ framework-acd1adbdf2a43c5b.js:1
+e @ framework-acd1adbdf2a43c5b.js:1
+e @ framework-acd1adbdf2a43c5b.js:1
+e @ framework-acd1adbdf2a43c5b.js:1
+e @ framework-acd1adbdf2a43c5b.js:1
+e @ framework-acd1adbdf2a43c5b.js:1
+um @ framework-acd1adbdf2a43c5b.js:1
+uh @ framework-acd1adbdf2a43c5b.js:1
+um @ framework-acd1adbdf2a43c5b.js:1
+uh @ framework-acd1adbdf2a43c5b.js:1
+um @ framework-acd1adbdf2a43c5b.js:1
+uh @ framework-acd1adbdf2a43c5b.js:1
+um @ framework-acd1adbdf2a43c5b.js:1
+uh @ framework-acd1adbdf2a43c5b.js:1
+um @ framework-acd1adbdf2a43c5b.js:1
+uh @ framework-acd1adbdf2a43c5b.js:1
+um @ framework-acd1adbdf2a43c5b.js:1
+uh @ framework-acd1adbdf2a43c5b.js:1
+um @ framework-acd1adbdf2a43c5b.js:1
+uh @ framework-acd1adbdf2a43c5b.js:1
+um @ framework-acd1adbdf2a43c5b.js:1
+uh @ framework-acd1adbdf2a43c5b.js:1
+um @ framework-acd1adbdf2a43c5b.js:1
+uh @ framework-acd1adbdf2a43c5b.js:1
+um @ framework-acd1adbdf2a43c5b.js:1
+uh @ framework-acd1adbdf2a43c5b.js:1
+um @ framework-acd1adbdf2a43c5b.js:1
+uh @ framework-acd1adbdf2a43c5b.js:1
+um @ framework-acd1adbdf2a43c5b.js:1
+uh @ framework-acd1adbdf2a43c5b.js:1
+um @ framework-acd1adbdf2a43c5b.js:1
+uh @ framework-acd1adbdf2a43c5b.js:1
+um @ framework-acd1adbdf2a43c5b.js:1
+uh @ framework-acd1adbdf2a43c5b.js:1
+um @ framework-acd1adbdf2a43c5b.js:1
+uh @ framework-acd1adbdf2a43c5b.js:1
+um @ framework-acd1adbdf2a43c5b.js:1
+uh @ framework-acd1adbdf2a43c5b.js:1
+um @ framework-acd1adbdf2a43c5b.js:1
+uh @ framework-acd1adbdf2a43c5b.js:1
+um @ framework-acd1adbdf2a43c5b.js:1
+uh @ framework-acd1adbdf2a43c5b.js:1
+um @ framework-acd1adbdf2a43c5b.js:1
+uh @ framework-acd1adbdf2a43c5b.js:1
+um @ framework-acd1adbdf2a43c5b.js:1
+uh @ framework-acd1adbdf2a43c5b.js:1
+um @ framework-acd1adbdf2a43c5b.js:1
+uh @ framework-acd1adbdf2a43c5b.js:1
+um @ framework-acd1adbdf2a43c5b.js:1
+uh @ framework-acd1adbdf2a43c5b.js:1
+um @ framework-acd1adbdf2a43c5b.js:1
+uh @ framework-acd1adbdf2a43c5b.js:1
+um @ framework-acd1adbdf2a43c5b.js:1
+uh @ framework-acd1adbdf2a43c5b.js:1
+um @ framework-acd1adbdf2a43c5b.js:1
+uh @ framework-acd1adbdf2a43c5b.js:1
+um @ framework-acd1adbdf2a43c5b.js:1
+uh @ framework-acd1adbdf2a43c5b.js:1
+um @ framework-acd1adbdf2a43c5b.js:1
+uh @ framework-acd1adbdf2a43c5b.js:1
+um @ framework-acd1adbdf2a43c5b.js:1
+uh @ framework-acd1adbdf2a43c5b.js:1
+um @ framework-acd1adbdf2a43c5b.js:1
+uh @ framework-acd1adbdf2a43c5b.js:1
+um @ framework-acd1adbdf2a43c5b.js:1
+iS @ framework-acd1adbdf2a43c5b.js:1
+iE @ framework-acd1adbdf2a43c5b.js:1
+iB @ framework-acd1adbdf2a43c5b.js:1
+iD @ framework-acd1adbdf2a43c5b.js:1
+iv @ framework-acd1adbdf2a43c5b.js:1
+ig @ framework-acd1adbdf2a43c5b.js:1
+u9 @ framework-acd1adbdf2a43c5b.js:1
+u6 @ framework-acd1adbdf2a43c5b.js:1
+iH @ framework-acd1adbdf2a43c5b.js:1
+T @ framework-acd1adbdf2a43c5b.js:1
+layout-d0d1fb7708340b76.js:1 [Performance] App performance optimizations initialized

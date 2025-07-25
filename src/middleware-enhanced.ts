@@ -5,13 +5,13 @@ import { apiLogger } from '@/lib/logger';
 
 // Rate limiting configuration with different tiers
 const RATE_LIMITS = {
-  '/api/radio-stream': { limit: 5, windowMs: 60 * 1000 }, // 5 requests per minute for SSE
-  '/api/radio-meta': { limit: 60, windowMs: 60 * 1000 }, // 60 requests per minute
-  '/api/song': { limit: 30, windowMs: 60 * 1000 }, // 30 requests per minute
-  '/api/schedule': { limit: 20, windowMs: 60 * 1000 }, // 20 requests per minute
-  '/api/requests': { limit: 10, windowMs: 60 * 1000 }, // 10 requests per minute
-  '/api/health': { limit: 120, windowMs: 60 * 1000 }, // 120 requests per minute for health checks
-  default: { limit: 100, windowMs: 60 * 1000 } // 100 requests per minute for other routes
+  '/api/radio-stream': { limit: 10, windowMs: 60 * 1000 }, // 10 requests per minute for SSE
+  '/api/radio-meta': { limit: 120, windowMs: 60 * 1000 }, // 120 requests per minute
+  '/api/song': { limit: 60, windowMs: 60 * 1000 }, // 60 requests per minute
+  '/api/schedule': { limit: 40, windowMs: 60 * 1000 }, // 40 requests per minute
+  '/api/requests': { limit: 30, windowMs: 60 * 1000 }, // 30 requests per minute
+  '/api/health': { limit: 200, windowMs: 60 * 1000 }, // 200 requests per minute for health checks
+  default: { limit: 150, windowMs: 60 * 1000 } // 150 requests per minute for other routes
 };
 
 function getRateLimit(pathname: string) {
@@ -128,7 +128,7 @@ export async function enhancedMiddleware(request: NextRequest) {
       const origin = request.headers.get('origin');
       const allowedOrigins = process.env.NODE_ENV === 'development' 
         ? ['http://localhost:3000', 'http://127.0.0.1:3000']
-        : ['https://radio.oadro.com'];
+        : ['https://radio.oadro.com', 'https://oadro.com'];
       
       if (origin && allowedOrigins.includes(origin)) {
         response.headers.set('Access-Control-Allow-Origin', origin);

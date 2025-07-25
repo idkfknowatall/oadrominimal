@@ -3,7 +3,6 @@
  */
 
 import useSWR from 'swr';
-import { AZURACAST_BASE_URL, AZURACAST_STATION_NAME } from './config';
 
 // Cache configuration for different data types
 const CACHE_CONFIG = {
@@ -64,7 +63,7 @@ const fetcher = async (url: string) => {
 // Hook for now playing data with optimized caching
 export function useNowPlaying() {
   const { data, error, isLoading, mutate } = useSWR(
-    `${AZURACAST_BASE_URL}/api/nowplaying/${AZURACAST_STATION_NAME}`,
+    '/api/radio-meta',
     fetcher,
     {
       ...CACHE_CONFIG.nowPlaying,
@@ -92,7 +91,7 @@ export function useNowPlaying() {
 // Hook for station information with longer cache
 export function useStationInfo() {
   const { data, error, isLoading } = useSWR(
-    `${AZURACAST_BASE_URL}/api/station/${AZURACAST_STATION_NAME}`,
+    '/api/health',
     fetcher,
     CACHE_CONFIG.stationInfo
   );
@@ -155,7 +154,7 @@ function transformSong(songData: any) {
 // Preload critical data
 export function preloadNowPlaying() {
   // This will populate the SWR cache before components mount
-  return fetcher(`${AZURACAST_BASE_URL}/api/nowplaying/${AZURACAST_STATION_NAME}`)
+  return fetcher('/api/radio-meta')
     .then(transformNowPlayingData)
     .catch(() => null);
 }
@@ -166,8 +165,8 @@ export async function warmCache() {
     // Preload now playing data
     await preloadNowPlaying();
     
-    // Preload station info
-    await fetcher(`${AZURACAST_BASE_URL}/api/station/${AZURACAST_STATION_NAME}`);
+    // Preload station info via health endpoint
+    await fetcher('/api/health');
     
     console.log('[API Cache] Cache warmed successfully');
   } catch (error) {
