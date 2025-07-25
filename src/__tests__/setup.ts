@@ -1,142 +1,80 @@
+/**
+ * Jest test setup file
+ * This file is run before each test file
+ */
+
 import '@testing-library/jest-dom';
+import React from 'react';
 
-// Mock Web Audio API
-global.AudioContext = jest.fn().mockImplementation(() => ({
-  createAnalyser: jest.fn(() => ({
-    connect: jest.fn(),
-    disconnect: jest.fn(),
-    fftSize: 256,
-    frequencyBinCount: 128,
-    getByteFrequencyData: jest.fn(),
-    smoothingTimeConstant: 0.8,
-  })),
-  createGain: jest.fn(() => ({
-    connect: jest.fn(),
-    disconnect: jest.fn(),
-    gain: {
-      setTargetAtTime: jest.fn(),
-      value: 1,
-    },
-  })),
-  createMediaElementSource: jest.fn(() => ({
-    connect: jest.fn(),
-    disconnect: jest.fn(),
-  })),
-  destination: {},
-  state: 'running',
-  currentTime: 0,
-  resume: jest.fn(),
-  close: jest.fn(),
-}));
-
-// Mock HTMLMediaElement
-Object.defineProperty(window.HTMLMediaElement.prototype, 'play', {
-  writable: true,
-  value: jest.fn().mockImplementation(() => Promise.resolve()),
-});
-
-Object.defineProperty(window.HTMLMediaElement.prototype, 'pause', {
-  writable: true,
-  value: jest.fn(),
-});
-
-Object.defineProperty(window.HTMLMediaElement.prototype, 'load', {
-  writable: true,
-  value: jest.fn(),
-});
-
-// Mock HLS.js
-jest.mock('hls.js', () => {
-  return {
-    __esModule: true,
-    default: jest.fn().mockImplementation(() => ({
-      loadSource: jest.fn(),
-      attachMedia: jest.fn(),
+// Mock Next.js router
+jest.mock('next/router', () => ({
+  useRouter: () => ({
+    route: '/',
+    pathname: '/',
+    query: {},
+    asPath: '/',
+    push: jest.fn(),
+    replace: jest.fn(),
+    reload: jest.fn(),
+    back: jest.fn(),
+    prefetch: jest.fn(),
+    beforePopState: jest.fn(),
+    events: {
       on: jest.fn(),
-      once: jest.fn(),
-      destroy: jest.fn(),
-    })),
-    isSupported: jest.fn(() => true),
-    Events: {
-      ERROR: 'hlsError',
-      MANIFEST_PARSED: 'hlsManifestParsed',
+      off: jest.fn(),
+      emit: jest.fn(),
     },
-  };
-});
-
-// Mock IntersectionObserver
-global.IntersectionObserver = jest.fn().mockImplementation(() => ({
-  observe: jest.fn(),
-  unobserve: jest.fn(),
-  disconnect: jest.fn(),
+  }),
 }));
 
-// Mock ResizeObserver
-global.ResizeObserver = jest.fn().mockImplementation(() => ({
-  observe: jest.fn(),
-  unobserve: jest.fn(),
-  disconnect: jest.fn(),
+// Mock Next.js navigation
+jest.mock('next/navigation', () => ({
+  useRouter: () => ({
+    push: jest.fn(),
+    replace: jest.fn(),
+    refresh: jest.fn(),
+    back: jest.fn(),
+    forward: jest.fn(),
+  }),
+  usePathname: () => '/',
+  useSearchParams: () => new URLSearchParams(),
 }));
 
-// Mock matchMedia
-Object.defineProperty(window, 'matchMedia', {
-  writable: true,
-  value: jest.fn().mockImplementation(query => ({
-    matches: false,
-    media: query,
-    onchange: null,
-    addListener: jest.fn(),
-    removeListener: jest.fn(),
-    addEventListener: jest.fn(),
-    removeEventListener: jest.fn(),
-    dispatchEvent: jest.fn(),
-  })),
-});
+// Mock environment variables for tests
+process.env.NODE_ENV = 'test';
+process.env.NEXT_PUBLIC_AZURACAST_BASE_URL = 'https://test.example.com';
+process.env.NEXT_PUBLIC_AZURACAST_STATION_NAME = 'test-station';
 
-// Mock localStorage
-const localStorageMock = {
-  getItem: jest.fn(),
-  setItem: jest.fn(),
-  removeItem: jest.fn(),
-  clear: jest.fn(),
+// Mock lucide-react icons
+jest.mock('lucide-react', () => ({
+  ThumbsUp: jest.fn(({ className, ...props }) => 
+    React.createElement('svg', { 
+      className, 
+      'data-testid': 'thumbs-up-icon', 
+      ...props 
+    }, React.createElement('title', {}, 'ThumbsUp'))
+  ),
+  ThumbsDown: jest.fn(({ className, ...props }) => 
+    React.createElement('svg', { 
+      className, 
+      'data-testid': 'thumbs-down-icon', 
+      ...props 
+    }, React.createElement('title', {}, 'ThumbsDown'))
+  ),
+  Vote: jest.fn(({ className, ...props }) => 
+    React.createElement('svg', { 
+      className, 
+      'data-testid': 'vote-icon', 
+      ...props 
+    }, React.createElement('title', {}, 'Vote'))
+  ),
+}));
+
+// Global test utilities
+global.console = {
+  ...console,
+  // Suppress console.log in tests unless explicitly needed
+  log: jest.fn(),
+  warn: jest.fn(),
+  error: jest.fn(),
 };
-Object.defineProperty(window, 'localStorage', {
-  value: localStorageMock,
-});
-
-// Mock performance API
-Object.defineProperty(window, 'performance', {
-  value: {
-    now: jest.fn(() => Date.now()),
-    mark: jest.fn(),
-    measure: jest.fn(),
-    getEntriesByType: jest.fn(() => []),
-  },
-});
-
-// Mock requestAnimationFrame
-global.requestAnimationFrame = jest.fn(cb => setTimeout(cb, 16));
-global.cancelAnimationFrame = jest.fn(id => clearTimeout(id));
-
-// Mock EventSource
-global.EventSource = jest.fn().mockImplementation(() => ({
-  addEventListener: jest.fn(),
-  removeEventListener: jest.fn(),
-  close: jest.fn(),
-  readyState: 1,
-}));
-
-// Setup console spy to suppress expected warnings in tests
-const originalConsoleWarn = console.warn;
-const originalConsoleError = console.error;
-
-beforeEach(() => {
-  console.warn = jest.fn();
-  console.error = jest.fn();
-});
-
-afterEach(() => {
-  console.warn = originalConsoleWarn;
-  console.error = originalConsoleError;
-  jest.clearAllMocks();
-});

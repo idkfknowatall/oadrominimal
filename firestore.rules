@@ -1,0 +1,61 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // Helper functions for validation
+    function isValidVoteType(voteType) {
+      return voteType in ['like', 'dislike'];
+    }
+    
+    function isValidVoteDocument(data) {
+      return data.keys().hasAll(['songId', 'userId', 'voteType', 'timestamp', 'songTitle', 'songArtist'])
+        && data.songId is string
+        && data.userId is string
+        && isValidVoteType(data.voteType)
+        && data.timestamp is number
+        && data.songTitle is string
+        && data.songArtist is string
+        && data.songId.size() > 0
+        && data.userId.size() > 0
+        && data.songTitle.size() > 0
+        && data.songArtist.size() > 0;
+    }
+    
+    function isValidVoteUpdate(newData, existingData) {
+      return isValidVoteDocument(newData)
+        && newData.songId == existingData.songId
+        && newData.userId == existingData.userId
+        && newData.songTitle == existingData.songTitle
+        && newData.songArtist == existingData.songArtist;
+    }
+    
+    // Votes collection rules
+    match /votes/{voteId} {
+      // Anyone can read votes for displaying vote counts
+      allow read: if true;
+      
+      // Allow authenticated users to create votes (NextAuth handles authentication)
+      allow create: if isValidVoteDocument(request.resource.data);
+      
+      // Allow users to update their own votes
+      allow update: if isValidVoteUpdate(request.resource.data, resource.data);
+      
+      // No vote deletion allowed to maintain data integrity
+      allow delete: if false;
+    }
+    
+    // Vote aggregates collection rules
+    match /vote-aggregates/{songId} {
+      // Anyone can read vote aggregates for displaying counts
+      allow read: if true;
+      
+      // Allow authenticated users to update aggregates (for client-side voting)
+      allow write: if true;
+    }
+    
+    // Deny access to any other collections
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

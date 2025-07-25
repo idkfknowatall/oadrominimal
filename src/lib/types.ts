@@ -275,6 +275,83 @@ export type NonEmptyArray<T> = [T, ...T[]];
 export type Optional<T, K extends keyof T> = Omit<T, K> & Partial<Pick<T, K>>;
 export type RequiredFields<T, K extends keyof T> = T & Required<Pick<T, K>>;
 
+// Firebase voting system types
+export interface VoteDocument {
+  id: string; // Auto-generated document ID
+  songId: string; // AzuraCast song ID
+  userId: string; // Discord user ID
+  voteType: 'like' | 'dislike';
+  timestamp: number; // Unix timestamp
+  songTitle: string; // Denormalized for analytics
+  songArtist: string; // Denormalized for analytics
+}
+
+export interface VoteAggregateDocument {
+  id: string; // Same as songId
+  songId: string;
+  likes: number;
+  dislikes: number;
+  totalVotes: number;
+  lastUpdated: number; // Unix timestamp
+  songTitle: string; // Denormalized
+  songArtist: string; // Denormalized
+}
+
+export interface VoteCount {
+  likes: number;
+  dislikes: number;
+  total: number;
+}
+
+export interface VoteData {
+  userVote: 'like' | 'dislike' | null;
+  counts: VoteCount;
+  isLoading: boolean;
+}
+
+export interface DiscordUser {
+  id: string;
+  username: string;
+  avatar: string | null;
+  discriminator: string;
+}
+
+// Type guards for voting system
+export const isVoteType = (value: unknown): value is 'like' | 'dislike' => {
+  return value === 'like' || value === 'dislike';
+};
+
+export const isVoteDocument = (obj: unknown): obj is VoteDocument => {
+  if (typeof obj !== 'object' || obj === null) return false;
+  
+  const vote = obj as Record<string, unknown>;
+  
+  return (
+    typeof vote.id === 'string' &&
+    typeof vote.songId === 'string' &&
+    typeof vote.userId === 'string' &&
+    isVoteType(vote.voteType) &&
+    typeof vote.timestamp === 'number' &&
+    typeof vote.songTitle === 'string' &&
+    typeof vote.songArtist === 'string'
+  );
+};
+
+export const isVoteCount = (obj: unknown): obj is VoteCount => {
+  if (typeof obj !== 'object' || obj === null) return false;
+  
+  const count = obj as Record<string, unknown>;
+  
+  return (
+    typeof count.likes === 'number' &&
+    typeof count.dislikes === 'number' &&
+    typeof count.total === 'number' &&
+    count.likes >= 0 &&
+    count.dislikes >= 0 &&
+    count.total >= 0
+  );
+};
+
 // Removed unused types for simplified version:
 // InteractionUpdate, Interaction, RadioState, StateService, LoggerService, UserCache
 // These are not needed in the client-only simplified version

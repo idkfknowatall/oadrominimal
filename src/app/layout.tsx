@@ -8,6 +8,7 @@ import { cn } from '@/lib/utils';
 import ErrorBoundary from '@/components/error-boundary';
 import AsyncBoundary from '@/components/async-boundary';
 import PersistentRadioProvider from '@/components/persistent-radio-provider';
+import { AuthProvider } from '@/components/providers/auth-provider';
 
 export const metadata: Metadata = {
   metadataBase: new URL('https://radio.oadro.com'),
@@ -121,9 +122,11 @@ export default function RootLayout({
               enableSystem
               disableTransitionOnChange
             >
-              <PersistentRadioProvider>
-                {children}
-              </PersistentRadioProvider>
+              <AuthProvider>
+                <PersistentRadioProvider>
+                  {children}
+                </PersistentRadioProvider>
+              </AuthProvider>
               <Toaster />
             </ThemeProvider>
           </AsyncBoundary>
