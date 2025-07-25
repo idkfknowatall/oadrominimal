@@ -36,7 +36,7 @@ export function I18nDemo() {
           Navigation Translations
         </h2>
         <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
-          {(['nav.home', 'nav.schedule', 'nav.requests', 'nav.about', 'nav.services'] as const).map((key) => (
+          {(['nav.home', 'nav.schedule', 'nav.requests', 'nav.about'] as const).map((key) => (
             <div key={key} className="text-center">
               <div className="bg-blue-50 dark:bg-blue-900 px-3 py-2 rounded text-blue-700 dark:text-blue-300">
                 {t(key)}

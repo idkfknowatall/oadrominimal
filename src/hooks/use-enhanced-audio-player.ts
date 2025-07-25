@@ -1,559 +1,528 @@
-'use client';
+/**
+ * Enhanced Audio Player Hook with Memory Management and Performance Monitoring
+ * Implements comprehensive cleanup, circuit breaker pattern, and performance tracking
+ */
 
-import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import Hls from 'hls.js';
-import { HLS_STREAM_URL, VISUALIZER_FFT_SIZE } from '@/lib/config';
-import { useIsMobile } from '@/hooks/use-mobile';
-import { useMobileAudioOptimization } from '@/hooks/use-mobile-audio-optimization';
-import { useCircuitBreaker } from '@/hooks/use-circuit-breaker';
-import { usePerformanceMonitoring } from '@/hooks/use-performance-monitoring';
-import { audioLogger } from '@/lib/logger';
-import { featureFlags } from '@/lib/feature-flags';
+import { useCircuitBreaker } from './use-circuit-breaker';
+import { usePerformanceMonitoring } from './use-performance-monitoring';
 
-// Audio player state interface for better type safety
-interface AudioPlayerState {
+export interface AudioPlayerState {
   isPlaying: boolean;
-  streamUrl: string;
   volume: number;
   isMuted: boolean;
+  currentTime: number;
+  duration: number;
+  buffered: number;
   isLoading: boolean;
   error: string | null;
+  streamUrl: string;
+  isLive: boolean;
 }
 
-// Audio connection state for better tracking
-interface AudioConnectionState {
-  isConnected: boolean;
-  connectionAttempts: number;
-  lastConnectionTime: number;
+export interface AudioMetrics {
+  bufferHealth: number;
+  dropouts: number;
+  latency: number;
+  quality: 'high' | 'medium' | 'low';
+  bitrate: number;
 }
 
-export function useEnhancedAudioPlayer(forceSseReconnect?: () => void) {
-  // Consolidated state management
+export interface AudioPlayerOptions {
+  streamUrl: string;
+  autoPlay?: boolean;
+  volume?: number;
+  enableMetrics?: boolean;
+  enableCircuitBreaker?: boolean;
+  hlsConfig?: Partial<Hls['config']>;
+}
+
+const DEFAULT_HLS_CONFIG: Partial<Hls['config']> = {
+  debug: false,
+  enableWorker: true,
+  lowLatencyMode: true,
+  backBufferLength: 30,
+  maxBufferLength: 60,
+  maxMaxBufferLength: 120,
+  maxBufferSize: 60 * 1000 * 1000, // 60MB
+  maxBufferHole: 0.5,
+  highBufferWatchdogPeriod: 2,
+  nudgeOffset: 0.1,
+  nudgeMaxRetry: 3,
+  maxFragLookUpTolerance: 0.25,
+  liveSyncDurationCount: 3,
+  liveMaxLatencyDurationCount: 10,
+  liveDurationInfinity: false,
+  enableSoftwareAES: true,
+  manifestLoadingTimeOut: 10000,
+  manifestLoadingMaxRetry: 3,
+  manifestLoadingRetryDelay: 1000,
+  levelLoadingTimeOut: 10000,
+  levelLoadingMaxRetry: 3,
+  levelLoadingRetryDelay: 1000,
+  fragLoadingTimeOut: 20000,
+  fragLoadingMaxRetry: 6,
+  fragLoadingRetryDelay: 1000,
+  startFragPrefetch: true,
+  testBandwidth: true,
+};
+
+export function useEnhancedAudioPlayer(options: AudioPlayerOptions) {
+  const {
+    streamUrl,
+    autoPlay = false,
+    volume: initialVolume = 0.7,
+    enableMetrics = true,
+    enableCircuitBreaker = true,
+    hlsConfig = {},
+  } = options;
+
+  // State management
   const [state, setState] = useState<AudioPlayerState>({
     isPlaying: false,
-    streamUrl: HLS_STREAM_URL,
-    volume: 1,
+    volume: initialVolume,
     isMuted: false,
+    currentTime: 0,
+    duration: 0,
+    buffered: 0,
     isLoading: false,
     error: null,
-  });
-  
-  // Mobile detection for optimizations
-  const isMobile = useIsMobile();
-
-  // Enhanced error handling and resilience
-  const circuitBreaker = useCircuitBreaker({
-    threshold: featureFlags.circuitBreakerThreshold,
-    timeout: 10000,
-    resetTimeout: 30000,
+    streamUrl,
+    isLive: true,
   });
 
-  // Performance monitoring
-  const performance = usePerformanceMonitoring();
+  const [metrics, setMetrics] = useState<AudioMetrics>({
+    bufferHealth: 100,
+    dropouts: 0,
+    latency: 0,
+    quality: 'high',
+    bitrate: 0,
+  });
 
-  // Audio Engine Refs
-  const audioRef = useRef<HTMLAudioElement>(null);
+  // Refs for cleanup and performance
+  const audioRef = useRef<HTMLAudioElement | null>(null);
   const hlsRef = useRef<Hls | null>(null);
-  const audioContextRef = useRef<AudioContext | null>(null);
   const analyserRef = useRef<AnalyserNode | null>(null);
-  const sourceRef = useRef<MediaElementAudioSourceNode | null>(null);
-  const gainRef = useRef<GainNode | null>(null);
-  const animationFrameRef = useRef<number | null>(null);
+  const audioContextRef = useRef<AudioContext | null>(null);
+  const sourceNodeRef = useRef<MediaElementAudioSourceNode | null>(null);
+  const animationFrameRef = useRef<number>();
+  const metricsIntervalRef = useRef<NodeJS.Timeout>();
+  const cleanupCallbacksRef = useRef<(() => void)[]>([]);
 
-  // Enhanced connection tracking
-  const connectionStateRef = useRef<AudioConnectionState>({
-    isConnected: false,
-    connectionAttempts: 0,
-    lastConnectionTime: 0,
+  // Performance monitoring and circuit breaker
+  const performanceMonitor = usePerformanceMonitoring({
+    enabled: enableMetrics,
+    componentName: 'AudioPlayer',
+    updateInterval: 2000,
+    onAlert: (alert) => {
+      console.warn('[Audio Player] Performance alert:', alert);
+    },
   });
 
-  // Ref to track current play promise to avoid interruptions
-  const playPromiseRef = useRef<Promise<void> | null>(null);
+  const circuitBreaker = useCircuitBreaker({
+    name: 'AudioPlayer',
+    failureThreshold: 3,
+    recoveryTimeout: 30000,
+    successThreshold: 2,
+  });
 
-  // Apply mobile audio optimizations
-  useMobileAudioOptimization(audioRef, isMobile);
+  /**
+   * Comprehensive cleanup function
+   */
+  const cleanup = useCallback(() => {
+    console.log('[Audio Player] Starting cleanup...');
 
-  // Memoized HLS configuration for better performance
-  const hlsConfig = useMemo(() => ({
-    debug: false,
-    maxBufferLength: isMobile ? 15 : 30,
-    maxMaxBufferLength: isMobile ? 30 : 60,
-    maxBufferSize: isMobile ? 30 * 1000 * 1000 : 60 * 1000 * 1000,
-    maxBufferHole: 0.5,
-    lowLatencyMode: false,
-    backBufferLength: isMobile ? 30 : 90,
-    fragLoadingTimeOut: 20000,
-    manifestLoadingTimeOut: 10000,
-    enableWorker: !isMobile,
-    startLevel: -1,
-    capLevelToPlayerSize: true,
-    liveSyncDurationCount: isMobile ? 2 : 3,
-    liveMaxLatencyDurationCount: isMobile ? 5 : 10,
-    maxFragLookUpTolerance: 0.25,
-    maxSeekHole: 2,
-    manifestLoadingMaxRetry: featureFlags.maxRetryAttempts,
-    manifestLoadingRetryDelay: 1000,
-    levelLoadingMaxRetry: featureFlags.maxRetryAttempts,
-    levelLoadingRetryDelay: 1000,
-    fragLoadingMaxRetry: featureFlags.maxRetryAttempts,
-    fragLoadingRetryDelay: 1000,
-  }), [isMobile]);
-
-  // Enhanced error handling with circuit breaker
-  const handleError = useCallback((error: string, context?: string, recoverable = true) => {
-    const errorObj = {
-      message: error,
-      context: context || 'Unknown',
-      timestamp: Date.now(),
-      recoverable,
-      circuitState: circuitBreaker.state
-    };
-    
-    audioLogger.error(error, new Error(error), errorObj);
-    
-    if (featureFlags.enablePerformanceMonitoring) {
-      performance.reportMetric('audio_error', 1, errorObj);
+    // Cancel animation frame
+    if (animationFrameRef.current) {
+      cancelAnimationFrame(animationFrameRef.current);
+      animationFrameRef.current = undefined;
     }
-    
-    setState(prev => ({ ...prev, error, isLoading: false }));
-  }, [circuitBreaker.state, performance]);
 
-  // Clear error state
-  const clearError = useCallback(() => {
-    setState(prev => ({ ...prev, error: null }));
-  }, []);
-
-  // Load stream URL from localStorage on mount
-  useEffect(() => {
-    const savedStreamUrl = localStorage.getItem('oadro_stream_url');
-    if (savedStreamUrl) {
-      setState(prev => ({ ...prev, streamUrl: savedStreamUrl }));
+    // Clear metrics interval
+    if (metricsIntervalRef.current) {
+      clearInterval(metricsIntervalRef.current);
+      metricsIntervalRef.current = undefined;
     }
-  }, []);
 
-  // Save stream URL to localStorage on change
-  useEffect(() => {
-    localStorage.setItem('oadro_stream_url', state.streamUrl);
-  }, [state.streamUrl]);
-
-  const initializeAudioGraph = useCallback(async () => {
-    if (audioContextRef.current || !audioRef.current) return;
-    
-    return circuitBreaker.execute(async () => {
-      performance.startTimer('audio_graph_init');
-      
-      try {
-        const AudioContext = window.AudioContext || (window as any).webkitAudioContext;
-        const context = new AudioContext({
-          sampleRate: 44100,
-          latencyHint: 'playback',
-        });
-        audioContextRef.current = context;
-
-        const analyser = context.createAnalyser();
-        analyser.fftSize = VISUALIZER_FFT_SIZE;
-        analyser.smoothingTimeConstant = 0.6;
-        analyserRef.current = analyser;
-
-        const gainNode = context.createGain();
-        gainNode.gain.value = state.isMuted ? 0 : state.volume;
-        gainRef.current = gainNode;
-
-        const source = context.createMediaElementSource(audioRef.current!);
-        sourceRef.current = source;
-
-        source.connect(gainNode);
-        gainNode.connect(context.destination);
-        source.connect(analyser);
-
-        audioRef.current!.muted = false;
-        
-        const audio = audioRef.current!;
-        audio.preload = 'none';
-        audio.crossOrigin = 'anonymous';
-        
-        if ('playsInline' in audio) {
-          audio.playsInline = true;
-        }
-        
-        audioLogger.info('Audio graph initialized successfully');
-        performance.endTimer('audio_graph_init', { success: true });
-        
-      } catch (e) {
-        performance.endTimer('audio_graph_init', { success: false, error: e instanceof Error ? e.message : 'Unknown' });
-        throw new Error(`Failed to initialize Web Audio API: ${e instanceof Error ? e.message : 'Unknown error'}`);
-      }
-    });
-  }, [state.volume, state.isMuted, circuitBreaker, performance]);
-
-  const disconnect = useCallback(() => {
-    const audio = audioRef.current;
-    if (!audio || !connectionStateRef.current.isConnected) return;
-
-    performance.startTimer('audio_disconnect');
-    connectionStateRef.current.isConnected = false;
-
+    // Cleanup HLS
     if (hlsRef.current) {
       try {
         hlsRef.current.destroy();
         hlsRef.current = null;
-        audioLogger.info('HLS instance destroyed');
-      } catch (e) {
-        audioLogger.warn('Error destroying HLS instance', { error: e });
+        console.log('[Audio Player] HLS instance destroyed');
+      } catch (error) {
+        console.error('[Audio Player] Error destroying HLS:', error);
       }
     }
-    
-    performance.endTimer('audio_disconnect');
-  }, [performance]);
 
-  const togglePlayPause = useCallback(async () => {
-    clearError();
-    
-    try {
-      if (!audioContextRef.current) {
-        await initializeAudioGraph();
+    // Cleanup audio context and nodes
+    if (sourceNodeRef.current) {
+      try {
+        sourceNodeRef.current.disconnect();
+        sourceNodeRef.current = null;
+        console.log('[Audio Player] Source node disconnected');
+      } catch (error) {
+        console.error('[Audio Player] Error disconnecting source node:', error);
       }
-      if (audioContextRef.current?.state === 'suspended') {
-        await audioContextRef.current.resume();
+    }
+
+    if (analyserRef.current) {
+      try {
+        analyserRef.current.disconnect();
+        analyserRef.current = null;
+        console.log('[Audio Player] Analyser node disconnected');
+      } catch (error) {
+        console.error('[Audio Player] Error disconnecting analyser:', error);
       }
-      
-      setState(prev => {
-        const newIsPlaying = !prev.isPlaying;
-        if (!newIsPlaying) {
-          disconnect();
+    }
+
+    if (audioContextRef.current) {
+      try {
+        if (audioContextRef.current.state !== 'closed') {
+          audioContextRef.current.close();
         }
-        return { ...prev, isPlaying: newIsPlaying, isLoading: newIsPlaying };
-      });
-    } catch (error) {
-      handleError(error instanceof Error ? error.message : 'Failed to toggle playback', 'Toggle Play/Pause');
+        audioContextRef.current = null;
+        console.log('[Audio Player] Audio context closed');
+      } catch (error) {
+        console.error('[Audio Player] Error closing audio context:', error);
+      }
     }
-  }, [initializeAudioGraph, disconnect, clearError, handleError]);
 
-  const connect = useCallback(async () => {
-    const audio = audioRef.current;
-    if (!audio || connectionStateRef.current.isConnected) {
+    // Cleanup audio element
+    if (audioRef.current) {
+      try {
+        audioRef.current.pause();
+        audioRef.current.removeAttribute('src');
+        audioRef.current.load();
+        console.log('[Audio Player] Audio element cleaned');
+      } catch (error) {
+        console.error('[Audio Player] Error cleaning audio element:', error);
+      }
+    }
+
+    // Run additional cleanup callbacks
+    cleanupCallbacksRef.current.forEach(callback => {
+      try {
+        callback();
+      } catch (error) {
+        console.error('[Audio Player] Error in cleanup callback:', error);
+      }
+    });
+    cleanupCallbacksRef.current = [];
+
+    console.log('[Audio Player] Cleanup completed');
+  }, []);
+
+  /**
+   * Registers a cleanup callback
+   */
+  const addCleanupCallback = useCallback((callback: () => void) => {
+    cleanupCallbacksRef.current.push(callback);
+  }, []);
+
+  /**
+   * Initializes audio context and analyser
+   */
+  const initializeAudioContext = useCallback(async () => {
+    if (!audioRef.current || audioContextRef.current) return;
+
+    try {
+      const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
+      const analyser = audioContext.createAnalyser();
+      const source = audioContext.createMediaElementSource(audioRef.current);
+
+      analyser.fftSize = 256;
+      analyser.smoothingTimeConstant = 0.8;
+
+      source.connect(analyser);
+      analyser.connect(audioContext.destination);
+
+      audioContextRef.current = audioContext;
+      analyserRef.current = analyser;
+      sourceNodeRef.current = source;
+
+      console.log('[Audio Player] Audio context initialized');
+    } catch (error) {
+      console.error('[Audio Player] Failed to initialize audio context:', error);
+    }
+  }, []);
+
+  /**
+   * Initializes HLS with comprehensive error handling
+   */
+  const initializeHLS = useCallback(async () => {
+    if (!audioRef.current || !Hls.isSupported()) {
+      console.warn('[Audio Player] HLS not supported, falling back to native playback');
       return;
     }
 
-    return circuitBreaker.execute(async () => {
-      performance.startTimer('audio_connect');
+    try {
+      const hls = new Hls({
+        ...DEFAULT_HLS_CONFIG,
+        ...hlsConfig,
+      });
+
+      // HLS event handlers
+      hls.on(Hls.Events.MEDIA_ATTACHED, () => {
+        console.log('[Audio Player] HLS media attached');
+      });
+
+      hls.on(Hls.Events.MANIFEST_PARSED, () => {
+        console.log('[Audio Player] HLS manifest parsed');
+        if (autoPlay) {
+          audioRef.current?.play().catch(console.error);
+        }
+      });
+
+      hls.on(Hls.Events.ERROR, (event, data) => {
+        console.error('[Audio Player] HLS error:', data);
+        
+        if (data.fatal) {
+          setState(prev => ({ ...prev, error: `HLS Error: ${data.details}` }));
+          
+          switch (data.type) {
+            case Hls.ErrorTypes.NETWORK_ERROR:
+              console.log('[Audio Player] Fatal network error, attempting recovery...');
+              hls.startLoad();
+              break;
+            case Hls.ErrorTypes.MEDIA_ERROR:
+              console.log('[Audio Player] Fatal media error, attempting recovery...');
+              hls.recoverMediaError();
+              break;
+            default:
+              console.log('[Audio Player] Fatal error, destroying HLS...');
+              hls.destroy();
+              break;
+          }
+        }
+      });
+
+      hls.on(Hls.Events.BUFFER_APPENDED, () => {
+        updateBufferMetrics();
+      });
+
+      hls.attachMedia(audioRef.current);
+      hls.loadSource(streamUrl);
+      hlsRef.current = hls;
+
+      console.log('[Audio Player] HLS initialized');
+    } catch (error) {
+      console.error('[Audio Player] Failed to initialize HLS:', error);
+      setState(prev => ({ ...prev, error: 'Failed to initialize audio stream' }));
+    }
+  }, [streamUrl, autoPlay, hlsConfig, updateBufferMetrics]);
+
+  /**
+   * Updates buffer health metrics
+   */
+  const updateBufferMetrics = useCallback(() => {
+    if (!audioRef.current) return;
+
+    try {
+      const audio = audioRef.current;
+      const buffered = audio.buffered;
+      const currentTime = audio.currentTime;
       
-      connectionStateRef.current.isConnected = true;
-      connectionStateRef.current.connectionAttempts++;
-      connectionStateRef.current.lastConnectionTime = Date.now();
+      let bufferHealth = 100;
+      let bufferedAmount = 0;
 
-      const onCanPlay = async () => {
-        if (playPromiseRef.current) {
-          playPromiseRef.current = null;
-        }
-
-        const playPromise = audio.play();
-        playPromiseRef.current = playPromise;
-
-        try {
-          await playPromise;
-          if (playPromiseRef.current === playPromise) {
-            playPromiseRef.current = null;
-          }
-          setState(prev => ({ ...prev, isLoading: false }));
-          
-          if (forceSseReconnect) {
-            forceSseReconnect();
-          }
-          
-          performance.endTimer('audio_connect', { success: true });
-          audioLogger.info('Audio playback started successfully');
-        } catch (error) {
-          performance.endTimer('audio_connect', { success: false, error: error instanceof Error ? error.message : 'Unknown' });
-          throw new Error(`Audio play failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
-        }
-      };
-
-      const fallbackToMp3 = () => {
-        audioLogger.info('Falling back to MP3 stream');
-        const mp3Url = 'https://radio.oadro.com/listen/oadro/radio.mp3';
-        audio.src = `${mp3Url}?_=${Date.now()}`;
-        
-        if (isMobile) {
-          audio.preload = 'none';
-          audio.crossOrigin = 'anonymous';
-          if ('playsInline' in audio) {
-            audio.playsInline = true;
+      if (buffered.length > 0) {
+        // Find the buffer range that contains current time
+        for (let i = 0; i < buffered.length; i++) {
+          if (currentTime >= buffered.start(i) && currentTime <= buffered.end(i)) {
+            bufferedAmount = buffered.end(i) - currentTime;
+            break;
           }
         }
         
-        audio.load();
-        audio.addEventListener('canplay', onCanPlay, { once: true });
-        audio.addEventListener('error', () => {
-          throw new Error('MP3 fallback also failed');
-        }, { once: true });
-      };
-
-      if (state.streamUrl.endsWith('.m3u8')) {
-        if (Hls.isSupported()) {
-          const hls = new Hls(hlsConfig);
-          hlsRef.current = hls;
-
-          hls.on(Hls.Events.ERROR, (event, data) => {
-            if (data.fatal) {
-              audioLogger.error('Fatal HLS error', new Error(data.details), { type: data.type, details: data.details });
-              hls.destroy();
-              hlsRef.current = null;
-              fallbackToMp3();
-            } else {
-              audioLogger.warn('Non-fatal HLS warning', { type: data.type, details: data.details });
-            }
-          });
-
-          hls.loadSource(state.streamUrl);
-          hls.attachMedia(audio);
-          hls.once(Hls.Events.MANIFEST_PARSED, () => {
-            onCanPlay();
-          });
-
-          setTimeout(() => {
-            if (hlsRef.current && !audio.readyState) {
-              audioLogger.warn('HLS loading timeout - falling back to MP3');
-              hls.destroy();
-              hlsRef.current = null;
-              fallbackToMp3();
-            }
-          }, 10000);
-
-        } else if (audio.canPlayType('application/vnd.apple.mpegurl')) {
-          audio.src = state.streamUrl;
-          audio.addEventListener('canplay', onCanPlay, { once: true });
-          audio.addEventListener('error', fallbackToMp3, { once: true });
-        } else {
-          audioLogger.info('HLS not supported - using MP3 fallback');
-          fallbackToMp3();
-        }
-      } else {
-        audio.src = `${state.streamUrl}?_=${Date.now()}`;
-        
-        if (isMobile) {
-          audio.preload = 'none';
-          audio.crossOrigin = 'anonymous';
-          if ('playsInline' in audio) {
-            audio.playsInline = true;
-          }
-        }
-        
-        audio.load();
-        audio.addEventListener('canplay', onCanPlay, { once: true });
-        audio.addEventListener('error', () => {
-          throw new Error('MP3 stream failed');
-        }, { once: true });
+        // Calculate buffer health (0-100%)
+        bufferHealth = Math.min(100, (bufferedAmount / 10) * 100); // 10 seconds = 100%
       }
-    });
-  }, [state.streamUrl, forceSseReconnect, hlsConfig, isMobile, circuitBreaker, performance]);
 
-  // Effect to manage connection based on playback state
-  useEffect(() => {
-    const audio = audioRef.current;
-    if (!audio) return;
+      setMetrics(prev => ({
+        ...prev,
+        bufferHealth,
+      }));
 
-    if (state.isPlaying) {
-      if (!connectionStateRef.current.isConnected) {
-        connect().catch(error => {
-          handleError(error instanceof Error ? error.message : 'Connection failed', 'Connection');
-          setState(prev => ({ ...prev, isPlaying: false, isLoading: false }));
+      // Update performance monitoring
+      if (enableMetrics) {
+        performanceMonitor.updateAudioMetrics({
+          bufferHealth,
+          dropouts: metrics.dropouts,
+          latency: metrics.latency,
         });
-      } else {
-        if (playPromiseRef.current) {
-          playPromiseRef.current = null;
-        }
-
-        const playPromise = audio.play();
-        playPromiseRef.current = playPromise;
-
-        playPromise
-          .then(() => {
-            if (playPromiseRef.current === playPromise) {
-              playPromiseRef.current = null;
-            }
-            setState(prev => ({ ...prev, isLoading: false }));
-          })
-          .catch((error) => {
-            handleError(error instanceof Error ? error.message : 'Audio resume failed', 'Resume');
-            if (playPromiseRef.current === playPromise) {
-              playPromiseRef.current = null;
-            }
-          });
       }
-    } else {
-      audio.pause();
+    } catch (error) {
+      console.error('[Audio Player] Error updating buffer metrics:', error);
     }
-  }, [state.isPlaying, connect, handleError]);
+  }, [enableMetrics, performanceMonitor, metrics.dropouts, metrics.latency]);
 
-  // Enhanced cleanup effect
-  useEffect(() => {
-    return () => {
-      // Cancel any pending animation frames
-      if (animationFrameRef.current) {
-        cancelAnimationFrame(animationFrameRef.current);
-        animationFrameRef.current = null;
-      }
-      
-      // Disconnect audio nodes properly
-      if (sourceRef.current) {
-        try {
-          sourceRef.current.disconnect();
-        } catch (e) {
-          audioLogger.warn('Error disconnecting source node', { error: e });
-        }
-        sourceRef.current = null;
-      }
-      
-      if (gainRef.current) {
-        try {
-          gainRef.current.disconnect();
-        } catch (e) {
-          audioLogger.warn('Error disconnecting gain node', { error: e });
-        }
-        gainRef.current = null;
-      }
-      
-      if (analyserRef.current) {
-        try {
-          analyserRef.current.disconnect();
-        } catch (e) {
-          audioLogger.warn('Error disconnecting analyser node', { error: e });
-        }
-        analyserRef.current = null;
-      }
-      
-      // Close audio context properly
-      if (audioContextRef.current && audioContextRef.current.state !== 'closed') {
-        try {
-          audioContextRef.current.close();
-        } catch (e) {
-          audioLogger.warn('Error closing audio context', { error: e });
-        }
-        audioContextRef.current = null;
-      }
-      
-      // Destroy HLS instance
-      if (hlsRef.current) {
-        try {
-          hlsRef.current.destroy();
-        } catch (e) {
-          audioLogger.warn('Error destroying HLS instance', { error: e });
-        }
-        hlsRef.current = null;
-      }
-      
-      disconnect();
-    };
-  }, [disconnect]);
+  /**
+   * Audio event handlers
+   */
+  const setupAudioEventHandlers = useCallback(() => {
+    if (!audioRef.current) return;
 
-  // Effect to manage volume
-  useEffect(() => {
-    if (gainRef.current && audioContextRef.current) {
-      const targetVolume = state.isMuted ? 0 : state.volume;
-      gainRef.current.gain.setTargetAtTime(
-        targetVolume,
-        audioContextRef.current.currentTime,
-        0.015
-      );
-    }
-  }, [state.volume, state.isMuted]);
+    const audio = audioRef.current;
 
-  // Enhanced visualizer animation with performance monitoring
-  useEffect(() => {
-    const visualize = () => {
-      if (!analyserRef.current || !state.isPlaying) {
-        return;
-      }
-
-      if (featureFlags.enablePerformanceMonitoring) {
-        performance.startTimer('visualizer_frame');
-      }
-
-      const bufferLength = analyserRef.current.frequencyBinCount;
-      const dataArray = new Uint8Array(bufferLength);
-      analyserRef.current.getByteFrequencyData(dataArray);
-      document.dispatchEvent(
-        new CustomEvent('audiodata', {
-          detail: { freqData: dataArray, bufferLength },
-        })
-      );
-
-      if (featureFlags.enablePerformanceMonitoring) {
-        performance.endTimer('visualizer_frame');
-      }
-
-      animationFrameRef.current = requestAnimationFrame(visualize);
+    const handleLoadStart = () => setState(prev => ({ ...prev, isLoading: true, error: null }));
+    const handleCanPlay = () => setState(prev => ({ ...prev, isLoading: false }));
+    const handlePlay = () => setState(prev => ({ ...prev, isPlaying: true }));
+    const handlePause = () => setState(prev => ({ ...prev, isPlaying: false }));
+    const handleEnded = () => setState(prev => ({ ...prev, isPlaying: false }));
+    const handleError = (e: Event) => {
+      const error = (e.target as HTMLAudioElement).error;
+      const errorMessage = error ? `Audio Error: ${error.message}` : 'Unknown audio error';
+      setState(prev => ({ ...prev, error: errorMessage, isLoading: false }));
     };
 
-    if (state.isPlaying) {
-      if (!animationFrameRef.current) {
-        visualize();
-      }
-    }
-
-    return () => {
-      if (animationFrameRef.current) {
-        cancelAnimationFrame(animationFrameRef.current);
-        animationFrameRef.current = null;
-      }
-      const bufferLength = analyserRef.current?.frequencyBinCount || 256;
-      document.dispatchEvent(
-        new CustomEvent('audiodata', {
-          detail: { freqData: new Uint8Array(bufferLength), bufferLength },
-        })
-      );
+    const handleTimeUpdate = () => {
+      setState(prev => ({
+        ...prev,
+        currentTime: audio.currentTime,
+        duration: audio.duration || 0,
+      }));
+      updateBufferMetrics();
     };
-  }, [state.isPlaying, performance]);
 
-  // Memoized setter functions for better performance
+    const handleVolumeChange = () => {
+      setState(prev => ({
+        ...prev,
+        volume: audio.volume,
+        isMuted: audio.muted,
+      }));
+    };
+
+    // Add event listeners
+    audio.addEventListener('loadstart', handleLoadStart);
+    audio.addEventListener('canplay', handleCanPlay);
+    audio.addEventListener('play', handlePlay);
+    audio.addEventListener('pause', handlePause);
+    audio.addEventListener('ended', handleEnded);
+    audio.addEventListener('error', handleError);
+    audio.addEventListener('timeupdate', handleTimeUpdate);
+    audio.addEventListener('volumechange', handleVolumeChange);
+
+    // Register cleanup
+    addCleanupCallback(() => {
+      audio.removeEventListener('loadstart', handleLoadStart);
+      audio.removeEventListener('canplay', handleCanPlay);
+      audio.removeEventListener('play', handlePlay);
+      audio.removeEventListener('pause', handlePause);
+      audio.removeEventListener('ended', handleEnded);
+      audio.removeEventListener('error', handleError);
+      audio.removeEventListener('timeupdate', handleTimeUpdate);
+      audio.removeEventListener('volumechange', handleVolumeChange);
+    });
+  }, [addCleanupCallback, updateBufferMetrics]);
+
+  /**
+   * Initialize audio player
+   */
+  const initialize = useCallback(async () => {
+    if (!audioRef.current) return;
+
+    try {
+      await performanceMonitor.measureOperation(async () => {
+        await initializeAudioContext();
+        setupAudioEventHandlers();
+        await initializeHLS();
+      }, 'AudioPlayerInitialization');
+    } catch (error) {
+      console.error('[Audio Player] Initialization failed:', error);
+      setState(prev => ({ ...prev, error: 'Failed to initialize audio player' }));
+    }
+  }, [performanceMonitor, initializeAudioContext, setupAudioEventHandlers, initializeHLS]);
+
+  /**
+   * Play/pause toggle with circuit breaker
+   */
+  const togglePlayPause = useCallback(async () => {
+    if (!audioRef.current || !circuitBreaker.isRequestAllowed()) return;
+
+    try {
+      await circuitBreaker.execute(async () => {
+        if (state.isPlaying) {
+          audioRef.current!.pause();
+        } else {
+          await audioRef.current!.play();
+        }
+      });
+    } catch (error) {
+      console.error('[Audio Player] Play/pause failed:', error);
+      setState(prev => ({ ...prev, error: 'Playback failed' }));
+    }
+  }, [state.isPlaying, circuitBreaker]);
+
+  /**
+   * Set volume with validation
+   */
   const setVolume = useCallback((volume: number) => {
-    setState(prev => ({ ...prev, volume }));
-    if (featureFlags.enablePerformanceMonitoring) {
-      performance.reportMetric('volume_change', volume);
-    }
-  }, [performance]);
-
-  const setIsMuted = useCallback((isMuted: boolean) => {
-    setState(prev => ({ ...prev, isMuted }));
-    if (featureFlags.enablePerformanceMonitoring) {
-      performance.reportMetric('mute_toggle', isMuted ? 1 : 0);
-    }
-  }, [performance]);
-
-  const setStreamUrl = useCallback((streamUrl: string) => {
-    setState(prev => ({ ...prev, streamUrl }));
-    audioLogger.info('Stream URL changed', { newUrl: streamUrl });
+    if (!audioRef.current) return;
+    
+    const clampedVolume = Math.max(0, Math.min(1, volume));
+    audioRef.current.volume = clampedVolume;
   }, []);
 
-  // Health status for monitoring
-  const getHealthStatus = useCallback(() => {
-    const circuitHealth = circuitBreaker.getHealthStatus();
-    return {
-      ...circuitHealth,
-      audioContext: audioContextRef.current?.state,
-      isConnected: connectionStateRef.current.isConnected,
-      connectionAttempts: connectionStateRef.current.connectionAttempts,
-      lastConnectionTime: connectionStateRef.current.lastConnectionTime,
-    };
-  }, [circuitBreaker]);
+  /**
+   * Set muted state
+   */
+  const setMuted = useCallback((muted: boolean) => {
+    if (!audioRef.current) return;
+    audioRef.current.muted = muted;
+  }, []);
+
+  /**
+   * Seek to specific time (for non-live streams)
+   */
+  const seekTo = useCallback((time: number) => {
+    if (!audioRef.current || state.isLive) return;
+    audioRef.current.currentTime = Math.max(0, Math.min(state.duration, time));
+  }, [state.isLive, state.duration]);
+
+  // Initialize on mount
+  useEffect(() => {
+    if (audioRef.current) {
+      initialize();
+    }
+
+    return cleanup;
+  }, [initialize, cleanup]);
+
+  // Metrics collection
+  useEffect(() => {
+    if (!enableMetrics) return;
+
+    const interval = setInterval(() => {
+      updateBufferMetrics();
+    }, 1000);
+
+    metricsIntervalRef.current = interval;
+    return () => clearInterval(interval);
+  }, [enableMetrics, updateBufferMetrics]);
 
   return {
-    audioRef,
-    analyserRef,
-    isPlaying: state.isPlaying,
-    volume: state.volume,
-    isMuted: state.isMuted,
-    streamUrl: state.streamUrl,
-    isLoading: state.isLoading,
-    error: state.error,
+    // State
+    ...state,
+    metrics,
+    
+    // Actions
     togglePlayPause,
     setVolume,
-    setIsMuted,
-    setStreamUrl,
-    clearError,
-    getHealthStatus,
-    circuitBreakerState: circuitBreaker.state,
-    performanceReport: featureFlags.enablePerformanceMonitoring ? performance.getReport : undefined,
+    setMuted,
+    seekTo,
+    
+    // Refs for external access
+    audioRef,
+    analyserRef,
+    audioContextRef,
+    
+    // Performance data
+    performanceStats: performanceMonitor.getPerformanceSummary(),
+    circuitBreakerStats: circuitBreaker.stats,
+    
+    // Cleanup
+    cleanup,
   };
 }

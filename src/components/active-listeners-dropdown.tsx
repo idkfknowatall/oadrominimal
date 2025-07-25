@@ -1,6 +1,6 @@
 'use client';
 
-import { useRadio } from '@/contexts/radio-context';
+import { useRadio } from '@/contexts/radio-context-simple';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Loader2, ServerCrash, UserX } from 'lucide-react';
 import {
@@ -13,7 +13,7 @@ import { useActiveListeners } from '@/hooks/use-active-listeners';
 const MAX_LISTENERS_TO_SHOW = 10;
 
 export default function ActiveListenersDropdown() {
-  const { openUserProfile, listenerCount } = useRadio();
+  const { listenerCount } = useRadio();
   const { listeners, isLoading, error } = useActiveListeners();
 
   const renderContent = () => {
@@ -52,7 +52,7 @@ export default function ActiveListenersDropdown() {
             key={listener.id}
             onSelect={(e) => {
               e.preventDefault();
-              openUserProfile(listener.id);
+              // User profile functionality not available in simplified version
             }}
           >
             <div className="flex items-center gap-2 cursor-pointer">

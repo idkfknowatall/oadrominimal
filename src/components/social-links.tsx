@@ -78,17 +78,19 @@ export function SocialLinks({
                   onClick={(e) => e.stopPropagation()}
                   aria-label={`Visit ${platformName}`}
                 >
-                  <IconComponent
-                    className={cn(
-                      variant === 'default' ? 'h-4 w-4' : 'h-3 w-3',
-                      platform === 'twitter' && 'text-sky-500',
-                      platform === 'instagram' && 'text-pink-500',
-                      platform === 'twitch' && 'text-purple-500',
-                      platform === 'youtube' && 'text-red-500',
-                      platform === 'github' && 'text-gray-500',
-                      platform === 'website' && 'text-blue-500'
-                    )}
-                  />
+                  {IconComponent && (
+                    <IconComponent
+                      className={cn(
+                        variant === 'default' ? 'h-4 w-4' : 'h-3 w-3',
+                        platform === 'twitter' && 'text-sky-500',
+                        platform === 'instagram' && 'text-pink-500',
+                        platform === 'twitch' && 'text-purple-500',
+                        platform === 'youtube' && 'text-red-500',
+                        platform === 'github' && 'text-gray-500',
+                        platform === 'website' && 'text-blue-500'
+                      )}
+                    />
+                  )}
                 </a>
               </TooltipTrigger>
               <TooltipContent>

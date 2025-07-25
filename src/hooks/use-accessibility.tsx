@@ -36,6 +36,51 @@ export function useAccessibility() {
   const liveRegionRef = useRef<HTMLDivElement>(null);
   const announcementTimeoutRef = useRef<NodeJS.Timeout>();
 
+  // Apply accessibility settings to the document
+  const applyAccessibilitySettings = useCallback((newSettings: AccessibilitySettings) => {
+    if (typeof document === 'undefined') return;
+
+    const root = document.documentElement;
+
+    // Apply CSS custom properties for accessibility
+    if (newSettings.reduceMotion) {
+      root.style.setProperty('--motion-duration', '0ms');
+      root.style.setProperty('--motion-easing', 'linear');
+    } else {
+      root.style.removeProperty('--motion-duration');
+      root.style.removeProperty('--motion-easing');
+    }
+
+    if (newSettings.highContrast) {
+      root.classList.add('high-contrast');
+    } else {
+      root.classList.remove('high-contrast');
+    }
+
+    if (newSettings.largeText) {
+      root.classList.add('large-text');
+    } else {
+      root.classList.remove('large-text');
+    }
+
+    if (newSettings.screenReaderOptimized) {
+      root.classList.add('screen-reader-optimized');
+    } else {
+      root.classList.remove('screen-reader-optimized');
+    }
+
+    if (newSettings.focusIndicators) {
+      root.classList.add('enhanced-focus');
+    } else {
+      root.classList.remove('enhanced-focus');
+    }
+
+    // Set ARIA attributes
+    document.body.setAttribute('data-reduce-motion', String(newSettings.reduceMotion));
+    document.body.setAttribute('data-high-contrast', String(newSettings.highContrast));
+    document.body.setAttribute('data-large-text', String(newSettings.largeText));
+  }, []);
+
   // Initialize accessibility settings from system preferences and localStorage
   useEffect(() => {
     if (!featureFlags.enableA11yFeatures) return;
@@ -81,7 +126,7 @@ export function useAccessibility() {
     };
 
     initializeSettings();
-  }, []);
+  }, [applyAccessibilitySettings]);
 
   // Save settings to localStorage when they change
   useEffect(() => {
@@ -89,52 +134,7 @@ export function useAccessibility() {
       localStorage.setItem('oadro_accessibility_settings', JSON.stringify(settings));
       applyAccessibilitySettings(settings);
     }
-  }, [settings]);
-
-  // Apply accessibility settings to the document
-  const applyAccessibilitySettings = useCallback((newSettings: AccessibilitySettings) => {
-    if (typeof document === 'undefined') return;
-
-    const root = document.documentElement;
-
-    // Apply CSS custom properties for accessibility
-    if (newSettings.reduceMotion) {
-      root.style.setProperty('--motion-duration', '0ms');
-      root.style.setProperty('--motion-easing', 'linear');
-    } else {
-      root.style.removeProperty('--motion-duration');
-      root.style.removeProperty('--motion-easing');
-    }
-
-    if (newSettings.highContrast) {
-      root.classList.add('high-contrast');
-    } else {
-      root.classList.remove('high-contrast');
-    }
-
-    if (newSettings.largeText) {
-      root.classList.add('large-text');
-    } else {
-      root.classList.remove('large-text');
-    }
-
-    if (newSettings.screenReaderOptimized) {
-      root.classList.add('screen-reader-optimized');
-    } else {
-      root.classList.remove('screen-reader-optimized');
-    }
-
-    if (newSettings.focusIndicators) {
-      root.classList.add('enhanced-focus');
-    } else {
-      root.classList.remove('enhanced-focus');
-    }
-
-    // Set ARIA attributes
-    document.body.setAttribute('data-reduce-motion', String(newSettings.reduceMotion));
-    document.body.setAttribute('data-high-contrast', String(newSettings.highContrast));
-    document.body.setAttribute('data-large-text', String(newSettings.largeText));
-  }, []);
+  }, [settings, applyAccessibilitySettings]);
 
   // Announce message to screen readers
   const announce = useCallback((announcement: AccessibilityAnnouncement) => {

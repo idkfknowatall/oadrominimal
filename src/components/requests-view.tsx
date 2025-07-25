@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import Image from 'next/image';
 import { Search, Music, ChevronLeft, ChevronRight, ExternalLink, User, RefreshCw, Send, CheckCircle, XCircle } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -33,8 +34,10 @@ function SongCard({ song, onRequest, isRequesting }: SongCardProps) {
           <div className="shrink-0">
             <div className="w-12 h-12 rounded-md overflow-hidden bg-muted">
               {song.song.art ? (
-                <img
+                <Image
                   src={song.song.art}
+                  width={48}
+                  height={48}
                   alt={`${song.song.title} album art`}
                   className="w-full h-full object-cover"
                   onError={(e) => {
@@ -115,7 +118,7 @@ function RequestSearch({ onSearchChange, isLoading }: {
           />
         </div>
         <p className="text-sm text-muted-foreground mt-2">
-          Type any part of the song title or artist name to find what you're looking for
+          Type any part of the song title or artist name to find what you&rsquo;re looking for
         </p>
       </CardContent>
     </Card>

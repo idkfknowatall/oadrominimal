@@ -57,7 +57,9 @@ export class SimpleRadioWorker {
       },
     };
 
-    console.log(`[SimpleRadioWorker] Instance #${this.state.instanceId} created.`);
+    if (process.env.NODE_ENV === 'development') {
+      console.log(`[SimpleRadioWorker] Instance #${this.state.instanceId} created.`);
+    }
   }
 
   public isStarted(): boolean {
@@ -70,11 +72,15 @@ export class SimpleRadioWorker {
 
   public async start(): Promise<boolean> {
     if (this.isStarted()) {
-      console.log(`[SimpleRadioWorker] Instance #${this.state.instanceId} already started.`);
+      if (process.env.NODE_ENV === 'development') {
+        console.log(`[SimpleRadioWorker] Instance #${this.state.instanceId} already started.`);
+      }
       return false;
     }
 
-    console.log(`[SimpleRadioWorker] Starting instance #${this.state.instanceId}`);
+    if (process.env.NODE_ENV === 'development') {
+      console.log(`[SimpleRadioWorker] Starting instance #${this.state.instanceId}`);
+    }
     this.state.isStarted = true;
 
     // Handle process termination gracefully
@@ -91,7 +97,9 @@ export class SimpleRadioWorker {
 
   private connectToSSE(): void {
     if (this.state.isReconnecting) {
-      console.log('[SimpleRadioWorker] Already attempting to reconnect, skipping...');
+      if (process.env.NODE_ENV === 'development') {
+        console.log('[SimpleRadioWorker] Already attempting to reconnect, skipping...');
+      }
       return;
     }
 
@@ -99,18 +107,24 @@ export class SimpleRadioWorker {
     this.state.connectionMetrics.totalConnections++;
     this.state.connectionMetrics.lastConnectionTime = Date.now();
 
-    console.log(`[SimpleRadioWorker] Connecting to SSE stream (attempt ${this.state.reconnectAttempts + 1}/${this.state.maxReconnectAttempts})...`);
+    if (process.env.NODE_ENV === 'development') {
+      console.log(`[SimpleRadioWorker] Connecting to SSE stream (attempt ${this.state.reconnectAttempts + 1}/${this.state.maxReconnectAttempts})...`);
+    }
     
     const sseUrl = `${AZURACAST_BASE_URL}/api/live/nowplaying/sse?cf_connect=%7B%22subs%22%3A%7B%22station%3A${AZURACAST_STATION_NAME}%22%3A%7B%7D%7D%7D`;
     
-    console.log(`[SimpleRadioWorker] SSE URL: ${sseUrl}`);
+    if (process.env.NODE_ENV === 'development') {
+      console.log(`[SimpleRadioWorker] SSE URL: ${sseUrl}`);
+    }
 
     try {
       const eventSource = new EventSource(sseUrl);
       this.state.eventSource = eventSource;
 
       eventSource.onopen = () => {
-        console.log('[SimpleRadioWorker] SSE connection opened successfully');
+        if (process.env.NODE_ENV === 'development') {
+          console.log('[SimpleRadioWorker] SSE connection opened successfully');
+        }
         this.state.isReconnecting = false;
         this.state.reconnectAttempts = 0;
         this.state.reconnectDelay = 1000; // Reset delay
@@ -131,7 +145,9 @@ export class SimpleRadioWorker {
           // Handle different message types
           if (data.channel && data.pub && data.pub.data && data.pub.data.np) {
             // This is a now playing update
-            console.log(`[SimpleRadioWorker] Now playing: "${data.pub.data.np.now_playing?.song?.title}" by ${data.pub.data.np.now_playing?.song?.artist}`);
+            if (process.env.NODE_ENV === 'development') {
+              console.log(`[SimpleRadioWorker] Now playing: "${data.pub.data.np.now_playing?.song?.title}" by ${data.pub.data.np.now_playing?.song?.artist}`);
+            }
             
             publish({
               type: 'now_playing',
@@ -151,16 +167,24 @@ export class SimpleRadioWorker {
             });
           } else if (data.connect) {
             // Connection acknowledgment
-            console.log('[SimpleRadioWorker] SSE connection acknowledged');
+            if (process.env.NODE_ENV === 'development') {
+              console.log('[SimpleRadioWorker] SSE connection acknowledged');
+            }
           } else if (Object.keys(data).length === 0) {
             // Heartbeat
-            console.log('[SimpleRadioWorker] SSE heartbeat received');
+            if (process.env.NODE_ENV === 'development') {
+              console.log('[SimpleRadioWorker] SSE heartbeat received');
+            }
           } else {
-            console.log('[SimpleRadioWorker] Unknown SSE message type:', Object.keys(data));
+            if (process.env.NODE_ENV === 'development') {
+              console.log('[SimpleRadioWorker] Unknown SSE message type:', Object.keys(data));
+            }
           }
         } catch (error) {
           console.error('[SimpleRadioWorker] Error parsing SSE message:', error);
-          console.log('[SimpleRadioWorker] Raw message:', event.data.substring(0, 200));
+          if (process.env.NODE_ENV === 'development') {
+            console.log('[SimpleRadioWorker] Raw message:', event.data.substring(0, 200));
+          }
         }
       };
 
@@ -228,7 +252,9 @@ export class SimpleRadioWorker {
     const jitter = Math.random() * 1000;
     const delay = Math.min(this.state.reconnectDelay + jitter, 30000); // Max 30 seconds
     
-    console.log(`[SimpleRadioWorker] Attempting to reconnect in ${Math.round(delay)}ms...`);
+    if (process.env.NODE_ENV === 'development') {
+      console.log(`[SimpleRadioWorker] Attempting to reconnect in ${Math.round(delay)}ms...`);
+    }
     
     // Clear existing timeout
     if (this.reconnectTimeoutId) {
@@ -266,14 +292,18 @@ export class SimpleRadioWorker {
   }
 
   public forceReconnect(): void {
-    console.log('[SimpleRadioWorker] Force reconnection requested');
+    if (process.env.NODE_ENV === 'development') {
+      console.log('[SimpleRadioWorker] Force reconnection requested');
+    }
     this.state.reconnectAttempts = 0;
     this.state.reconnectDelay = 1000;
     this.handleConnectionError();
   }
 
   public stop(): void {
-    console.log(`[SimpleRadioWorker] Stopping instance #${this.state.instanceId}...`);
+    if (process.env.NODE_ENV === 'development') {
+      console.log(`[SimpleRadioWorker] Stopping instance #${this.state.instanceId}...`);
+    }
     
     this.state.isStarted = false;
     this.state.isReconnecting = false;
@@ -301,7 +331,9 @@ export class SimpleRadioWorker {
       process.removeListener('SIGTERM', this.stop.bind(this));
     }
 
-    console.log(`[SimpleRadioWorker] Instance #${this.state.instanceId} stopped successfully`);
+    if (process.env.NODE_ENV === 'development') {
+      console.log(`[SimpleRadioWorker] Instance #${this.state.instanceId} stopped successfully`);
+    }
   }
 
   public getState() {

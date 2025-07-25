@@ -332,7 +332,7 @@ export function I18nProvider({ children }: { children: ReactNode }) {
     if (initialLocale !== 'en') {
       setLocale(initialLocale);
     }
-  }, []);
+  }, [setLocale]);
 
   const t: TranslationFunction = useCallback((key: keyof TranslationKeys, params?: Record<string, string | number>) => {
     const translation = translations[key] || defaultTranslations[key] || key;

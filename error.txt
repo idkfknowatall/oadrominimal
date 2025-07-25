@@ -1,0 +1,25 @@
+
+ ⚠ Invalid next.config.ts options detected: 
+ ⚠     Unrecognized key(s) in object: 'swcMinify'
+ ⚠ See more info here: https://nextjs.org/docs/messages/invalid-next-config
+ ⚠ The config property `experimental.turbo` is deprecated. Move this setting to `config.turbopack` as Turbopack is now stable.
+   ▲ Next.js 15.3.3
+   - Environments: .env.local, .env.production, .env
+
+   Creating an optimized production build ...
+ ✓ Compiled successfully in 13.0s
+   Linting and checking validity of types  .. ⨯ ESLint must be installed in order to run during builds: npm install --save-dev eslint
+   Linting and checking validity of types  ...Failed to compile.
+
+./src/app/api/auth/callback/route.ts:17:3
+Type error: Type 'string | boolean' is not assignable to type 'boolean'.
+  Type 'string' is not assignable to type 'boolean'.
+
+  15 |   // and compare it with the stored challenge
+  16 |   // For now, we'll do basic validation
+> 17 |   return codeVerifier && codeVerifier.length >= 43 && codeVerifier.length <= 128;    
+     |   ^
+  18 | }
+  19 |
+  20 | /**
+Next.js build worker exited with code: 1 and signal: null

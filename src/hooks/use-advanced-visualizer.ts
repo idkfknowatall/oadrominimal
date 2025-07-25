@@ -114,7 +114,7 @@ export function useAdvancedVisualizer(
       default:
         return `hsl(240, 90%, ${30 + intensity * 40}%)`;
     }
-  }, [visualizerConfig.colorScheme]);
+  }, [visualizerConfig.colorScheme, visualizerConfig]);
 
   // Process audio data
   const processAudioData = useCallback((analyser: AnalyserNode): AudioData => {
@@ -158,8 +158,9 @@ export function useAdvancedVisualizer(
     const sensitivity = visualizerConfig.sensitivity;
 
     for (let i = 0; i < newData.length; i++) {
-      const targetValue = (newData[i] / 255) * sensitivity;
-      smoothedDataRef.current[i] = smoothedDataRef.current[i] * smoothing + targetValue * (1 - smoothing);
+      const value = newData[i] ?? 0;
+      const targetValue = (value / 255) * sensitivity;
+      smoothedDataRef.current[i] = (smoothedDataRef.current[i] ?? 0) * smoothing + targetValue * (1 - smoothing);
     }
 
     return smoothedDataRef.current;
@@ -174,23 +175,23 @@ export function useAdvancedVisualizer(
   ) => {
     const { barCount } = visualizerConfig;
     const smoothedData = smoothFrequencyData(audioData.frequencyData);
-    const barWidth = width / barCount;
+    const barWidth = width / (barCount ?? 64);
     const maxBarHeight = height * 0.8;
 
     ctx.clearRect(0, 0, width, height);
 
-    for (let i = 0; i < barCount; i++) {
-      const dataIndex = Math.floor((i / barCount) * smoothedData.length);
-      const barHeight = smoothedData[dataIndex] * maxBarHeight;
+    for (let i = 0; i < (barCount ?? 64); i++) {
+      const dataIndex = Math.floor((i / (barCount ?? 64)) * smoothedData.length);
+      const barHeight = (smoothedData[dataIndex] ?? 0) * maxBarHeight;
       
       const x = i * barWidth;
       const y = height - barHeight;
       
-      ctx.fillStyle = getColor(i, barCount, smoothedData[dataIndex]);
+      ctx.fillStyle = getColor(i, barCount ?? 64, smoothedData[dataIndex] ?? 0);
       ctx.fillRect(x, y, barWidth - 1, barHeight);
       
       // Add glow effect
-      if (smoothedData[dataIndex] > 0.5) {
+      if ((smoothedData[dataIndex] ?? 0) > 0.5) {
         ctx.shadowBlur = 10;
         ctx.shadowColor = ctx.fillStyle;
         ctx.fillRect(x, y, barWidth - 1, barHeight);
@@ -244,9 +245,9 @@ export function useAdvancedVisualizer(
 
     ctx.clearRect(0, 0, width, height);
 
-    for (let i = 0; i < barCount; i++) {
+    for (let i = 0; i < (barCount ?? 64); i++) {
       const angle = (i / barCount) * Math.PI * 2;
-      const dataIndex = Math.floor((i / barCount) * smoothedData.length);
+      const dataIndex = Math.floor((i / (barCount ?? 64)) * smoothedData.length);
       const barLength = smoothedData[dataIndex] * maxBarLength;
       
       const startX = centerX + Math.cos(angle) * radius;

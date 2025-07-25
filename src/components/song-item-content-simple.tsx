@@ -44,7 +44,7 @@ export default function SongItemContent({
         </div>
         
         {/* On-demand platform links */}
-        <OnDemandLinks onDemand={song.onDemand} />
+        <OnDemandLinks onDemand={song.onDemand || null} />
 
         {song.played_at && (
           <p className="text-xs text-muted-foreground mt-0.5">

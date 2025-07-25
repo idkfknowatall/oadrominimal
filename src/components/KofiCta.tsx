@@ -1,7 +1,7 @@
 'use client';
 
 import { KofiIcon } from './icons';
-import { LargeIconButton } from './ui/large-icon-button';
+import { Button } from './ui/button';
 
 export default function KofiCta() {
   return (
@@ -19,9 +19,9 @@ export default function KofiCta() {
             rel="noopener noreferrer"
             className="inline-block w-full transition-transform hover:scale-105"
           >
-            <LargeIconButton className="bg-white text-black hover:bg-white/90 shadow-lg shadow-white/20 h-auto w-full p-2">
+            <Button className="bg-white text-black hover:bg-white/90 shadow-lg shadow-white/20 h-auto w-full p-2">
               <KofiIcon className="h-12 w-auto" />
-            </LargeIconButton>
+            </Button>
           </a>
         </div>
       </div>

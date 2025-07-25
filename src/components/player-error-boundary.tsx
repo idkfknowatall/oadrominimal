@@ -151,7 +151,7 @@ export default function PlayerErrorBoundary({
 }: PlayerErrorBoundaryProps) {
   return (
     <ErrorBoundary
-      fallback={<PlayerErrorFallback onRetry={onRetry} showMiniPlayer={showMiniPlayer} />}
+      fallback={<PlayerErrorFallback onRetry={onRetry || (() => {})} showMiniPlayer={showMiniPlayer} />}
       isolate={true}
       resetOnPropsChange={true}
     >
@@ -167,7 +167,9 @@ export function usePlayerErrorHandler() {
     
     // Add player-specific error context
     const playerError = new Error(`Player Error: ${error.message}`);
-    playerError.stack = error.stack;
+    if (error.stack) {
+      playerError.stack = error.stack;
+    }
     playerError.name = `PlayerError_${context?.component || 'Unknown'}`;
     
     // TODO: Report to monitoring service

@@ -260,7 +260,9 @@ export function useAudioPlayer(forceSseReconnect?: () => void) {
     };
 
     const fallbackToMp3 = () => {
-      console.log('[AudioPlayer] Falling back to MP3 stream');
+      if (process.env.NODE_ENV === 'development') {
+        console.log('[AudioPlayer] Falling back to MP3 stream');
+      }
       // Use MP3 192kbps as fallback, but apply mobile optimizations
       const mp3Url = 'https://radio.oadro.com/listen/oadro/radio.mp3';
       audio.src = `${mp3Url}?_=${Date.now()}`;
@@ -345,7 +347,9 @@ export function useAudioPlayer(forceSseReconnect?: () => void) {
         // Add timeout fallback in case HLS takes too long
         setTimeout(() => {
           if (hlsRef.current && !audio.readyState) {
-            console.log('[AudioPlayer] HLS loading timeout - falling back to MP3');
+        if (process.env.NODE_ENV === 'development') {
+          console.log('[AudioPlayer] HLS loading timeout - falling back to MP3');
+        }
             hls.destroy();
             hlsRef.current = null;
             fallbackToMp3();
@@ -357,7 +361,9 @@ export function useAudioPlayer(forceSseReconnect?: () => void) {
         audio.addEventListener('canplay', onCanPlay, { once: true });
         audio.addEventListener('error', fallbackToMp3, { once: true });
       } else {
-        console.log('[AudioPlayer] HLS not supported - using MP3 fallback');
+        if (process.env.NODE_ENV === 'development') {
+          console.log('[AudioPlayer] HLS not supported - using MP3 fallback');
+        }
         fallbackToMp3();
       }
     } else {
@@ -384,7 +390,7 @@ export function useAudioPlayer(forceSseReconnect?: () => void) {
         setState(prev => ({ ...prev, isPlaying: false, isLoading: false }));
       }, { once: true });
     }
-  }, [state.streamUrl, forceSseReconnect, state.isPlaying, disconnect, hlsConfig, handleError, isMobile]);
+  }, [state.streamUrl, forceSseReconnect, hlsConfig, handleError, isMobile]);
 
   // Effect to manage connection based on playback state.
   useEffect(() => {

@@ -1,10 +1,10 @@
 import React from 'react';
 
 interface SimpleIconProps extends React.SVGAttributes<SVGElement> {
-  path: string;
+  path: string | undefined;
 }
 
-const SimpleIcon: React.FC<SimpleIconProps> = ({ path, ...props }) => (
+const SimpleIcon: React.FC<SimpleIconProps> = ({ path = '', ...props }) => (
   <svg
     {...props}
     xmlns="http://www.w3.org/2000/svg"

@@ -90,6 +90,7 @@ export default function PersistentRadioProvider({ children }: PersistentRadioPro
         if (mounted) {
           setIsAppInitialized(true); // Continue even if optimizations fail
         }
+        return undefined;
       }
     };
 
@@ -193,8 +194,8 @@ export default function PersistentRadioProvider({ children }: PersistentRadioPro
 
         for (let i = 0; i < dataLength; i++) {
           const sample = timeDomainData[i];
-          if (sample !== 128) isSilence = false;
-          const v = (sample - 128) / 128;
+          if (sample !== undefined && sample !== 128) isSilence = false;
+          const v = ((sample ?? 128) - 128) / 128;
           sum += v * v;
         }
 

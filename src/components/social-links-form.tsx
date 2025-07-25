@@ -80,7 +80,7 @@ export function SocialLinksForm({
                 htmlFor={`social-${platform}`}
                 className="flex items-center gap-2"
               >
-                <Icon className="h-4 w-4" />
+                {Icon && <Icon className="h-4 w-4" />}
                 <span>{platformName}</span>
               </Label>
               <Input

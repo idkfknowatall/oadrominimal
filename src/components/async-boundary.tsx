@@ -301,7 +301,7 @@ export function useAsyncErrorHandler() {
       
       // Enhance error with context
       const enhancedError = new Error(`Async Error (${errorContext?.operation || 'unknown'}): ${error.message}`);
-      enhancedError.stack = error.stack;
+      enhancedError.stack = error.stack || '';
       enhancedError.name = `AsyncError_${errorContext?.component || 'Unknown'}`;
       
       // TODO: Report to monitoring service
@@ -321,7 +321,7 @@ export function withAsyncErrorHandling<T>(
     console.error('Wrapped async operation failed:', error, context);
     
     const wrappedError = new Error(`${context?.operation || 'Async operation'} failed: ${error.message}`);
-    wrappedError.stack = error.stack;
+    wrappedError.stack = error.stack || '';
     wrappedError.name = `AsyncError_${context?.component || 'Unknown'}`;
     
     throw wrappedError;

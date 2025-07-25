@@ -278,3 +278,12 @@ export type RequiredFields<T, K extends keyof T> = T & Required<Pick<T, K>>;
 // Removed unused types for simplified version:
 // InteractionUpdate, Interaction, RadioState, StateService, LoggerService, UserCache
 // These are not needed in the client-only simplified version
+
+
+// ActiveListener type for the simplified version
+export interface ActiveListener {
+  id: string;
+  name: string;
+  avatar?: string;
+  joinedAt: number;
+}
