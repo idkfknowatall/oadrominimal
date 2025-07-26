@@ -1,7 +1,7 @@
 import Twitter from './Twitter';
 import Instagram from './Instagram';
 import Twitch from './Twitch';
-import Youtube from './Youtube';
+import YouTube from '../platforms/YouTube';
 import Github from './Github';
 import Website from './Website';
 import React from 'react';
@@ -14,7 +14,7 @@ export const socialIcons: Record<
   twitter: Twitter,
   instagram: Instagram,
   twitch: Twitch,
-  youtube: Youtube,
+  youtube: YouTube,
   github: Github,
   website: Website,
 };

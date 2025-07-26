@@ -10,6 +10,10 @@ const nextConfig: NextConfig = {
     ignoreDuringBuilds: true,
   },
   
+  // Production optimizations
+  output: 'standalone',
+  poweredByHeader: false,
+  
   // Enable experimental features for better performance
   experimental: {
     optimizePackageImports: ['lucide-react', 'framer-motion'],

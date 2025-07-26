@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { AlertCircle, Loader2 } from 'lucide-react'
 import { Alert, AlertDescription } from '@/components/ui/alert'
+import { getAuthErrorMessage } from '@/lib/auth-errors'
 
 interface SignInPageProps {
   searchParams: {
@@ -43,34 +44,7 @@ export default function SignIn({ searchParams }: SignInPageProps) {
     }
   }, [searchParams.callbackUrl, router])
 
-  const getErrorMessage = (error: string | null) => {
-    if (!error) return null
 
-    switch (error) {
-      case 'OAuthSignin':
-        return 'There was an error signing in with Discord. Please try again.'
-      case 'OAuthCallback':
-        return 'Discord authentication failed. Please check your permissions and try again.'
-      case 'OAuthCreateAccount':
-        return 'Could not create your account. Please try again or contact support.'
-      case 'EmailCreateAccount':
-        return 'Could not create account with this email address.'
-      case 'Callback':
-        return 'Authentication callback failed. Please try again.'
-      case 'OAuthAccountNotLinked':
-        return 'This Discord account is not linked to any existing account.'
-      case 'EmailSignin':
-        return 'Check your email for a sign-in link.'
-      case 'CredentialsSignin':
-        return 'Invalid credentials. Please check your details and try again.'
-      case 'SessionRequired':
-        return 'Please sign in to access this page.'
-      case 'AccessDenied':
-        return 'Access denied. You do not have permission to sign in.'
-      default:
-        return 'An error occurred during authentication. Please try again.'
-    }
-  }
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-background to-muted p-4">
@@ -85,7 +59,7 @@ export default function SignIn({ searchParams }: SignInPageProps) {
           {error && (
             <Alert variant="destructive">
               <AlertCircle className="h-4 w-4" />
-              <AlertDescription>{getErrorMessage(error)}</AlertDescription>
+              <AlertDescription>{error ? getAuthErrorMessage(error) : null}</AlertDescription>
             </Alert>
           )}
           

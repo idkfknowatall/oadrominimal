@@ -8,7 +8,8 @@
     "start": "next start",
     "test": "jest",
     "test:watch": "jest --watch",
-    "test:coverage": "jest --coverage"
+    "test:coverage": "jest --coverage",
+    "code-review": "node scripts/code-review.js"
   },
   "dependencies": {
     "@next-auth/firebase-adapter": "^2.0.1",
@@ -49,6 +50,8 @@
     "@types/node": "^20",
     "@types/react": "^18",
     "@types/react-dom": "^18",
+    "chalk": "^4.1.2",
+    "glob": "^10.3.10",
     "jest": "^30.0.5",
     "jest-environment-jsdom": "^30.0.5",
     "postcss": "^8",

@@ -18,6 +18,7 @@ import { AudioProvider } from '@/contexts/audio-context';
 import { MetadataProvider } from '@/contexts/metadata-context';
 import { useToast } from '@/hooks/use-toast';
 import { TIME } from '@/lib/constants';
+import { createAudioKeyboardHandler } from '@/lib/keyboard-shortcuts';
 import { useIsMobile } from '@/hooks/use-mobile';
 
 // Performance optimizations
@@ -103,32 +104,7 @@ export default function PersistentRadioProvider({ children }: PersistentRadioPro
 
   // Keyboard navigation support
   useEffect(() => {
-    const handleKeyDown = (event: KeyboardEvent) => {
-      // Only handle keyboard shortcuts when not typing in an input
-      if (event.target instanceof HTMLInputElement || event.target instanceof HTMLTextAreaElement) {
-        return;
-      }
-
-      switch (event.code) {
-        case 'Space':
-          event.preventDefault();
-          audioPlayer.togglePlayPause();
-          break;
-        case 'ArrowUp':
-          event.preventDefault();
-          audioPlayer.setVolume(Math.min(1, audioPlayer.volume + 0.1));
-          break;
-        case 'ArrowDown':
-          event.preventDefault();
-          audioPlayer.setVolume(Math.max(0, audioPlayer.volume - 0.1));
-          break;
-        case 'KeyM':
-          event.preventDefault();
-          audioPlayer.setIsMuted(!audioPlayer.isMuted);
-          break;
-      }
-    };
-
+    const handleKeyDown = createAudioKeyboardHandler(audioPlayer);
     document.addEventListener('keydown', handleKeyDown);
     return () => document.removeEventListener('keydown', handleKeyDown);
   }, [audioPlayer]);
