@@ -3,7 +3,7 @@
 import * as React from 'react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
-import { LogOut, User } from 'lucide-react';
+import { LogOut } from 'lucide-react';
 import type { DiscordUser } from '@/lib/types';
 import { cn } from '@/lib/utils';
 

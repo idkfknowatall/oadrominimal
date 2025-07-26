@@ -26,11 +26,12 @@ export default function AudioPlayer() {
 
   const { user, isAuthenticated, signIn } = useAuth();
 
-  const formatTime = (seconds: number) => {
-    const mins = Math.floor(seconds / 60);
-    const secs = Math.floor(seconds % 60);
-    return `${mins}:${secs.toString().padStart(2, '0')}`;
-  };
+  // Utility function for time formatting (available but not currently used)
+  // const formatTime = (seconds: number) => {
+  //   const mins = Math.floor(seconds / 60);
+  //   const secs = Math.floor(seconds % 60);
+  //   return `${mins}:${secs.toString().padStart(2, '0')}`;
+  // };
 
   const getVolumeIcon = () => {
     if (isMuted || volume === 0) return VolumeX;

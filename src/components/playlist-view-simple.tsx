@@ -22,7 +22,7 @@ interface PlaylistViewProps {
 
 // Enhanced UpNext song item with better error handling and performance
 const UpNextSongItem = memo(({ song, showDuration = true }: { song: Song; showDuration?: boolean }) => {
-  const handleImageError = useCallback((e: React.SyntheticEvent<HTMLImageElement>) => {
+  const handleImageError = useCallback(() => {
     console.warn(`[PlaylistView] Failed to load album art for ${song.title}`);
     // Image will fallback to the fallback div automatically
   }, [song.title]);

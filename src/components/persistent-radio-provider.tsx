@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
+import { useState, useEffect, useRef, useMemo } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { Info, Calendar, Music, Home } from 'lucide-react';
@@ -19,11 +19,14 @@ import { MetadataProvider } from '@/contexts/metadata-context';
 import { useToast } from '@/hooks/use-toast';
 import { TIME } from '@/lib/constants';
 import { createAudioKeyboardHandler } from '@/lib/keyboard-shortcuts';
-import { useIsMobile } from '@/hooks/use-mobile';
+// Additional hooks available for future features:
+// import { useIsMobile } from '@/hooks/use-mobile';
 
 // Performance optimizations
 import { registerServiceWorker, setupNetworkListeners, isOnline } from '@/lib/service-worker';
-import { warmCache, useStationInfo, useNowPlaying } from '@/lib/api-cache';
+import { warmCache } from '@/lib/api-cache';
+// Additional API hooks available for future features:
+// import { useStationInfo, useNowPlaying } from '@/lib/api-cache';
 
 interface PersistentRadioProviderProps {
   children: React.ReactNode;
@@ -31,18 +34,18 @@ interface PersistentRadioProviderProps {
 
 export default function PersistentRadioProvider({ children }: PersistentRadioProviderProps) {
   // --- STATE & HOOKS ---
-  const isMobile = useIsMobile();
+  // const isMobile = useIsMobile(); // Available but not currently used
   const pathname = usePathname();
-  const [isAppInitialized, setIsAppInitialized] = useState(false);
-  const [isOnlineState, setIsOnlineState] = useState(true);
+  const [, setIsAppInitialized] = useState(false);
+  const [, setIsOnlineState] = useState(true);
 
   // Custom Hooks for Core Logic (no auth needed)
   const radio = useRadioMetadata(null, true); // No user, always initialized
   const audioPlayer = useAudioPlayer(radio.forceSseReconnect);
   
-  // SWR hooks for instant API caching
-  const { data: stationInfo, error: stationError } = useStationInfo();
-  const { data: nowPlayingData, error: nowPlayingError } = useNowPlaying();
+  // SWR hooks for instant API caching (available but not currently used in UI)
+  // const { data: stationInfo, error: stationError } = useStationInfo();
+  // const { data: nowPlayingData, error: nowPlayingError } = useNowPlaying();
 
   useMediaSession(
     radio.liveSong,
@@ -333,8 +336,8 @@ export default function PersistentRadioProvider({ children }: PersistentRadioPro
     keepPreviousData: true,
   }), []);
 
-  // Helper function to check if we're on the home page
-  const isHomePage = pathname === '/';
+  // Helper function to check if we're on the home page (available but not currently used)
+  // const isHomePage = pathname === '/';
 
   return (
     <SWRConfig value={swrConfig}>

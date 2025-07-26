@@ -7,20 +7,21 @@ import { subscribe, type PubSubEvent } from '@/lib/interaction-stream';
 
 export const dynamic = 'force-dynamic';
 
-function writeSseEvent(
-  controller: ReadableStreamDefaultController<unknown>,
-  event: string,
-  data: object
-) {
-  const message = `event: ${event}\ndata: ${JSON.stringify(data)}\n\n`;
-  try {
-    controller.enqueue(message);
-  } catch {
-    console.warn(
-      `[SSE] Failed to write event "${event}", client may have disconnected.`
-    );
-  }
-}
+// Utility function for SSE events (currently unused but may be needed for future features)
+// function writeSseEvent(
+//   controller: ReadableStreamDefaultController<unknown>,
+//   event: string,
+//   data: object
+// ) {
+//   const message = `event: ${event}\ndata: ${JSON.stringify(data)}\n\n`;
+//   try {
+//     controller.enqueue(message);
+//   } catch {
+//     console.warn(
+//       `[SSE] Failed to write event "${event}", client may have disconnected.`
+//     );
+//   }
+// }
 
 export async function GET(request: NextRequest) {
   // Ensure the background worker is running

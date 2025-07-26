@@ -206,6 +206,7 @@ export function useVoting(
         voteCount: { likes: 0, dislikes: 0, total: 0 },
         isVoting: false,
         error: null,
+        lastVoteAttempt: null,
       });
       currentSongIdRef.current = null;
       return;

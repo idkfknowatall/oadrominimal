@@ -5,7 +5,7 @@
 
 import { toast } from '@/hooks/use-toast';
 import { VotingError, ErrorSeverity, getToastVariant, shouldShowToast } from './error-handling';
-import { RefreshCw, CheckCircle, XCircle, AlertTriangle, Wifi, WifiOff } from 'lucide-react';
+import { RefreshCw, Wifi, WifiOff } from 'lucide-react';
 
 /**
  * Show success toast for successful vote submission
@@ -221,21 +221,21 @@ function getErrorTitle(error: VotingError): string {
 }
 
 /**
- * Get icon component for error type
+ * Get icon component for error type (currently unused but available for future features)
  */
-function getErrorIcon(error: VotingError) {
-  switch (error.type) {
-    case 'network':
-    case 'offline':
-      return WifiOff;
-    case 'authentication':
-    case 'permission':
-      return XCircle;
-    case 'rate_limit':
-      return AlertTriangle;
-    default:
-      return error.severity === ErrorSeverity.HIGH || error.severity === ErrorSeverity.CRITICAL
-        ? XCircle
-        : AlertTriangle;
-  }
-}
+// function getErrorIcon(error: VotingError) {
+//   switch (error.type) {
+//     case 'network':
+//     case 'offline':
+//       return WifiOff;
+//     case 'authentication':
+//     case 'permission':
+//       return XCircle;
+//     case 'rate_limit':
+//       return AlertTriangle;
+//     default:
+//       return error.severity === ErrorSeverity.HIGH || error.severity === ErrorSeverity.CRITICAL
+//         ? XCircle
+//         : AlertTriangle;
+//   }
+// }

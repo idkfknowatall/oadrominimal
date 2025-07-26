@@ -1,15 +1,13 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { Search, Music, ChevronLeft, ChevronRight, ExternalLink, User, RefreshCw, Send, CheckCircle, XCircle } from 'lucide-react';
+import { useEffect } from 'react';
+import { Search, Music, ChevronLeft, ChevronRight, RefreshCw, Send, CheckCircle, XCircle } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useFilteredRequests, useRequestSubmission, useRequestSearch } from '@/hooks/use-requests';
-import { cleanGenreString, extractPlatformLinks, getCreatorInfo, getSongDisplayText } from '@/lib/request-types';
 import type { RequestableSong } from '@/lib/request-types';
 
 interface SongCardProps {
@@ -115,7 +113,7 @@ function RequestSearch({ onSearchChange, isLoading }: {
           />
         </div>
         <p className="text-sm text-muted-foreground mt-2">
-          Type any part of the song title or artist name to find what you're looking for
+          Type any part of the song title or artist name to find what you&rsquo;re looking for
         </p>
       </CardContent>
     </Card>

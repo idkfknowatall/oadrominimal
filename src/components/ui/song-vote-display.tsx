@@ -46,7 +46,7 @@ const SongVoteDisplay = React.forwardRef<HTMLDivElement, SongVoteDisplayProps>(
     const firebaseConfigured = React.useMemo(() => {
       try {
         return isFirebaseConfigured();
-      } catch (error) {
+      } catch {
         return false;
       }
     }, []);

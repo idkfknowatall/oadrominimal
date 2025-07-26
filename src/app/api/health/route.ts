@@ -153,7 +153,7 @@ export async function GET() {
       }
     });
     
-  } catch (error) {
+  } catch {
     const errorResult: HealthCheckResult = {
       status: 'unhealthy',
       timestamp: new Date().toISOString(),

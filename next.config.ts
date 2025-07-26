@@ -2,12 +2,12 @@
 import type {NextConfig} from 'next';
 
 const nextConfig: NextConfig = {
-  /* Performance optimizations */
+  /* Enable TypeScript and ESLint checks */
   typescript: {
-    ignoreBuildErrors: true,
+    ignoreBuildErrors: false,
   },
   eslint: {
-    ignoreDuringBuilds: true,
+    ignoreDuringBuilds: false,
   },
   
   // Production optimizations

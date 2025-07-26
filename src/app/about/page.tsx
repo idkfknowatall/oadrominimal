@@ -164,7 +164,7 @@ export default function AboutPage() {
                   <li>• Faster processing for dynamic content</li>
                   <li>• Slower processing for dense content</li>
                   <li>• Less audible compression</li>
-                  <li>• "Big sound" enhancement</li>
+                  <li>• &ldquo;Big sound&rdquo; enhancement</li>
                 </ul>
               </div>
             </div>
@@ -216,8 +216,8 @@ export default function AboutPage() {
         <section className="text-center space-y-4">
           <h2 className="text-2xl font-bold">Join Our Community</h2>
           <p className="text-muted-foreground max-w-2xl mx-auto">
-            Become part of the OADRO Radio family. Whether you're a listener, creator, or supporter, 
-            there's a place for you in our community.
+            Become part of the OADRO Radio family. Whether you&rsquo;re a listener, creator, or supporter, 
+            there&rsquo;s a place for you in our community.
           </p>
           
           <div className="flex flex-col sm:flex-row gap-4 justify-center items-center pt-4">

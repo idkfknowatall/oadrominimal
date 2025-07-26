@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
+import { useState, useEffect, useRef, useMemo } from 'react';
 // Removed unused imports: dynamic, AnimatePresence
 import Link from 'next/link';
 import { Info, Calendar, Music } from 'lucide-react';
@@ -21,11 +21,14 @@ import { useToast } from '@/hooks/use-toast';
 import { createAudioKeyboardHandler } from '@/lib/keyboard-shortcuts';
 import { TIME } from '@/lib/constants';
 // Development banner removed
-import { useIsMobile } from '@/hooks/use-mobile';
+// Additional hooks available for future features:
+// import { useIsMobile } from '@/hooks/use-mobile';
 
 // Performance optimizations
 import { registerServiceWorker, setupNetworkListeners, isOnline } from '@/lib/service-worker';
-import { warmCache, useStationInfo, useNowPlaying } from '@/lib/api-cache';
+import { warmCache } from '@/lib/api-cache';
+// Additional API hooks available for future features:
+// import { useStationInfo, useNowPlaying } from '@/lib/api-cache';
 
 interface RadioClientProps {
   children?: React.ReactNode;
@@ -33,17 +36,17 @@ interface RadioClientProps {
 
 export default function RadioClient({ children }: RadioClientProps) {
   // --- STATE & HOOKS ---
-  const isMobile = useIsMobile();
-  const [isAppInitialized, setIsAppInitialized] = useState(false);
-  const [isOnlineState, setIsOnlineState] = useState(true);
+  // const isMobile = useIsMobile(); // Available but not currently used
+  const [, setIsAppInitialized] = useState(false);
+  const [, setIsOnlineState] = useState(true);
 
   // Custom Hooks for Core Logic (no auth needed)
   const radio = useRadioMetadata(null, true); // No user, always initialized
   const audioPlayer = useAudioPlayer(radio.forceSseReconnect);
   
-  // SWR hooks for instant API caching
-  const { data: stationInfo, error: stationError } = useStationInfo();
-  const { data: nowPlayingData, error: nowPlayingError } = useNowPlaying();
+  // SWR hooks for instant API caching (available but not currently used in UI)
+  // const { data: stationInfo, error: stationError } = useStationInfo();
+  // const { data: nowPlayingData, error: nowPlayingError } = useNowPlaying();
 
   useMediaSession(
     radio.liveSong,

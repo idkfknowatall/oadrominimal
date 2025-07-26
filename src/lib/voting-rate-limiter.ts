@@ -12,7 +12,7 @@ interface RateLimitEntry {
  * In-memory rate limiter for voting actions
  * In production, this should be replaced with Redis or similar distributed cache
  */
-class VotingRateLimiter {
+export class VotingRateLimiter {
   private limits = new Map<string, RateLimitEntry>();
   private readonly windowMs = 60000; // 1 minute window
   private readonly maxRequests = 30; // 30 votes per minute per user

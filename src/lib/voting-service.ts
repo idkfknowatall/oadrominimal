@@ -7,19 +7,15 @@
 import {
   collection,
   doc,
-  setDoc,
   getDoc,
   getDocs,
   query,
   where,
   onSnapshot,
-  serverTimestamp,
   runTransaction,
-  Timestamp,
-  Unsubscribe,
-  FirestoreError
+  Unsubscribe
 } from 'firebase/firestore';
-import { getFirestore, FIREBASE_COLLECTIONS, isFirebaseError } from './firebase';
+import { getFirestore, FIREBASE_COLLECTIONS } from './firebase';
 import { VoteDocument, VoteAggregateDocument, VoteCount, isVoteType } from './types';
 import { 
   withEnhancedRetry, 

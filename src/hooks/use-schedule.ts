@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import useSWR from 'swr';
 import type { ScheduleData, ScheduleEntry } from '@/lib/schedule-types';
-import { getCurrentScheduleEntry, getNextScheduleEntry } from '@/lib/schedule-types';
+// Schedule utility functions are available but not currently used
 
 const SCHEDULE_REFRESH_INTERVAL = 60000; // 1 minute
 

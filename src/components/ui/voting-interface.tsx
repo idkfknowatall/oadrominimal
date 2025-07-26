@@ -133,7 +133,7 @@ export const VotingInterface = React.forwardRef<HTMLDivElement, VotingInterfaceP
         {isOffline && (
           <div className="flex items-center justify-center gap-2 p-3 rounded-lg bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 text-yellow-800 dark:text-yellow-200">
             <WifiOff className="h-4 w-4" />
-            <span className="text-sm">You're offline. Votes will be synced when connection is restored.</span>
+            <span className="text-sm">You&rsquo;re offline. Votes will be synced when connection is restored.</span>
           </div>
         )}
 

@@ -2,7 +2,9 @@
 
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import useSWR from 'swr';
-import type { RequestData, RequestableSong, RequestFilters, RequestSubmission } from '@/lib/request-types';
+import type { RequestData, RequestFilters, RequestSubmission } from '@/lib/request-types';
+// Type available for future features:
+// import type { RequestableSong } from '@/lib/request-types';
 import { filterSongs, paginateSongs, DEFAULT_FILTERS } from '@/lib/request-types';
 
 const REQUESTS_REFRESH_INTERVAL = 300000; // 5 minutes

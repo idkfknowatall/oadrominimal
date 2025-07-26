@@ -1,10 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth/next';
-import { authOptions } from '@/app/api/auth/[...nextauth]/route';
+import { authOptions } from '@/lib/auth';
 import { VotingRateLimiter } from '@/lib/voting-rate-limiter';
-import { VotingFeatureFlags } from '@/lib/voting-feature-flags';
-import { doc, getDoc, setDoc, updateDoc, increment, runTransaction } from 'firebase/firestore';
-import { db } from '@/lib/firebase';
+import { featureFlags } from '@/lib/voting-feature-flags';
+import { doc, runTransaction, increment } from 'firebase/firestore';
+import { getFirestore } from '@/lib/firebase';
 
 // Enhanced rate limiter with persistent storage simulation
 class EnhancedVotingRateLimiter extends VotingRateLimiter {
@@ -76,11 +76,19 @@ class EnhancedVotingRateLimiter extends VotingRateLimiter {
     const elapsed = Date.now() - lastVote;
     return Math.max(0, cooldownMs - elapsed);
   }
+
+  get maxVotes(): number {
+    return 30; // 30 votes per minute
+  }
+
+  get windowMs(): 60000 {
+    return 60000; // 1 minute window
+  }
 }
 
 // Global rate limiter instance
 const enhancedRateLimiter = new EnhancedVotingRateLimiter();
-const featureFlags = new VotingFeatureFlags();
+// Use the imported feature flags
 
 export class VoteCooldownError extends Error {
   constructor(
@@ -116,14 +124,14 @@ export async function POST(request: NextRequest) {
   try {
     // Get session
     const session = await getServerSession(authOptions);
-    if (!session?.user?.id) {
+    if (!session || !('user' in session) || !session.user?.id) {
       return NextResponse.json(
         { error: 'Authentication required' },
         { status: 401 }
       );
     }
 
-    const userId = session.user.id;
+    const userId = (session as any).user.id;
     const clientIP = getClientIP(request);
     
     // Parse request body
@@ -137,7 +145,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Check feature flags
-    if (!featureFlags.isEnabled('rateLimiting')) {
+    if (!featureFlags.enableVotingRateLimit) {
       // Fallback to basic voting without rate limiting
       return await performVote(userId, songId, voteType);
     }
@@ -157,7 +165,7 @@ export async function POST(request: NextRequest) {
 
     // Check user-based rate limiting
     if (!enhancedRateLimiter.canVote(userId)) {
-      const { remaining } = enhancedRateLimiter.getRemainingQuota(userId);
+      const remaining = enhancedRateLimiter.getRemainingVotes(userId);
       return NextResponse.json(
         { 
           error: 'User rate limit exceeded',
@@ -189,7 +197,7 @@ export async function POST(request: NextRequest) {
     const result = await performVote(userId, songId, voteType);
     
     // Record successful vote for rate limiting
-    enhancedRateLimiter.recordVote(userId);
+    enhancedRateLimiter.recordAttempt(userId);
     
     return result;
 
@@ -228,6 +236,7 @@ export async function POST(request: NextRequest) {
 
 async function performVote(userId: string, songId: string, voteType: 'like' | 'dislike') {
   try {
+    const db = getFirestore();
     const result = await runTransaction(db, async (transaction) => {
       const voteRef = doc(db, 'votes', `${songId}_${userId}`);
       const songRef = doc(db, 'songs', songId);
@@ -276,7 +285,7 @@ async function performVote(userId: string, songId: string, voteType: 'like' | 'd
       });
       
       // Update song vote counts
-      const updates: any = {};
+      const updates: Record<string, any> = {};
       if (likesChange !== 0) {
         updates.likes = increment(likesChange);
       }
@@ -313,7 +322,7 @@ export async function GET() {
     status: 'healthy',
     timestamp: new Date().toISOString(),
     rateLimiter: {
-      enabled: featureFlags.isEnabled('rateLimiting'),
+      enabled: featureFlags.enableVotingRateLimit,
       userLimit: enhancedRateLimiter.maxVotes,
       windowMs: enhancedRateLimiter.windowMs,
       cooldownMs: 5000

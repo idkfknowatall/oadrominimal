@@ -1,5 +1,4 @@
-import { NextAuthOptions } from 'next-auth'
-
+// NextAuth type extensions
 declare module 'next-auth' {
   interface Session {
     accessToken?: string

@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef, useState, useCallback } from 'react';
+import React, { useEffect, useRef, useState, useCallback } from 'react';
 import { featureFlags } from '@/lib/feature-flags';
 
 export interface AccessibilitySettings {
